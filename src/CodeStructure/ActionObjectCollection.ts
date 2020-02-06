@@ -48,8 +48,6 @@ export class ActionSourceFile {
     }
 
     public print() {
-        console.log('<html>');
-        console.log('<head><style>table {background-color: powderblue;}tr{border: solid}td{border: solid}</style></head>');
         console.log('<h1>Printing Action Data in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
         this.createStateIdentifiers.print();
         this.createActionTypes.print();
@@ -65,7 +63,6 @@ export class ActionSourceFile {
             actionStateVariable.print();
         });
         console.log('</table>');
-        console.log('</html>');
     }
 }
 
@@ -109,7 +106,10 @@ export class CreateStateVariableDeclaration {
 
     private setName(): void {
         const identifierObject = this.overallDeclaration.name as ts.Identifier;
-        this.varName = identifierObject.escapedText.toString();
+
+        if (identifierObject) {
+            this.varName = identifierObject.escapedText.toString();
+        }
     }
 
     public process(): void {

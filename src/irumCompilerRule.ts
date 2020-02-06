@@ -76,7 +76,9 @@ class PossibleActionDefinition {
 class RulesWalker extends Lint.RuleWalker {
     public static FAILURE_STRING = 'no multi-arg functions allowed';
 
+    private printActionData = false;
     private printData = false;
+
     private processingStateVariableDeclaration = new ProcessingStateVariableDeclarationStatus();
 
     // Processing action variable declaration
@@ -97,23 +99,29 @@ class RulesWalker extends Lint.RuleWalker {
             this.actionSourceFileCollection.set(sourceFileName, this.currentActionSourceFile);
         }
 
-        if (sourceFileName.indexOf('C:/Users/igodil/repo/M365AdminUX-1/src/microsoft-search/connectors') !== -1) {
-            this.printData = false;
+        if (
+            sourceFileName.indexOf(
+                'C:/Users/igodil.REDMOND/Source/Repos/M365AdminUX/src/microsoft-search/connectors/addConnector-wizard/addConnectorWizard.redux.ts'
+            ) !== -1
+        ) {
+            this.printActionData = true;
         } else {
-            this.printData = false;
+            this.printActionData = false;
         }
 
         this.print('<table>');
-        this.print('<tr><td>SourceFile: ' + sourceFileName + '</td></tr>');
+        this.print('<tr><td><div class="source">SourceFile: ' + sourceFileName + '</div></td></tr>');
 
         super.visitSourceFile(node);
 
-        this.printActionObjects();
+        if (this.printActionData) {
+            this.printActionObjects();
+        }
         this.print('</table>');
     }
 
     private printActionObjects(): void {
-        this.actionSourceFileCollection.forEach((value: ActionSourceFile, key: string) => {
+        this.actionSourceFileCollection.forEach((value: ActionSourceFile, _key: string) => {
             value.print();
         });
     }
