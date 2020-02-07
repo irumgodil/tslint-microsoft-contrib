@@ -1,15 +1,16 @@
 import * as ts from 'typescript';
 import * as Lint from 'tslint';
 
-import * as tsutils from 'tsutils';
 import { ExtendedMetadata } from './utils/ExtendedMetadata';
-import { ActionSourceFile } from './CodeStructure/ActionObjectCollection';
+import { ActionSourceFile } from './CodeStructure/ActionSourceFile';
+import { PossibleActionDefinition } from './StateActionProcessor/PossibleActionDefinition';
+import { ProcessingStateVariableDeclarationStatus } from './StateActionProcessor/ProcessingStateVariableDeclarationStatus';
 
 export class Rule extends Lint.Rules.AbstractRule {
     public static metadata: ExtendedMetadata = {
         ruleName: 'irum-compiler',
         type: 'maintainability',
-        description: 'IRUM FHL',
+        description: 'State-Action Processor',
         options: null, // tslint:disable-line:no-null-keyword
         optionsDescription: '',
         typescriptOnly: true,
@@ -26,104 +27,161 @@ export class Rule extends Lint.Rules.AbstractRule {
     }
 }
 
-class ProcessingStateVariableDeclarationStatus {
-    public processingOn = false;
-    public processingObjectLiteral = false;
-    public processingPropertyAssignment = false;
-
-    public reset(): void {
-        this.processingOn = false;
-        this.processingObjectLiteral = false;
-        this.processingPropertyAssignment = false;
-    }
-}
-
-class PossibleActionDefinition {
-    public enclosingVariableDeclaration: ts.VariableDeclaration;
-    public enclosingObjectLiteralDefinition: ts.ObjectLiteralExpression;
-    public typeDeclaration: ts.PropertyAssignment;
-    public payloadDeclaration: ts.PropertyAssignment;
-
-    public isEnclosingObjectLiteralActionDefinition(): boolean {
-        // Object literal expression has 2 properties and each is a property assignment.
-        const objectProperties = this.enclosingObjectLiteralDefinition.properties;
-        if (objectProperties && objectProperties.length === 2) {
-            if (
-                objectProperties[0].kind === ts.SyntaxKind.PropertyAssignment &&
-                objectProperties[1].kind === ts.SyntaxKind.PropertyAssignment
-            ) {
-                this.typeDeclaration = objectProperties[0];
-
-                if (this.isPropertyAssignmentType()) {
-                    this.payloadDeclaration = objectProperties[1];
-                    return this.isPropertyAssignmentPayload();
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private isPropertyAssignmentType() {
-        return this.typeDeclaration.name.getText() === 'type';
-    }
-
-    private isPropertyAssignmentPayload() {
-        return this.typeDeclaration.name.getText() === 'payload';
-    }
-}
-
 class RulesWalker extends Lint.RuleWalker {
     public static FAILURE_STRING = 'no multi-arg functions allowed';
+
+    // State machine for processing the variable declaration/call expression statements - to track which part of the statement we are processing
+    private processingStateVariableDeclaration = new ProcessingStateVariableDeclarationStatus();
 
     private printActionData = false;
     private printData = false;
 
-    private processingStateVariableDeclaration = new ProcessingStateVariableDeclarationStatus();
-
     // Processing action variable declaration
     private processingActionPropertyDeclaration = false;
 
+    // Action Source File collection
     // tslint:disable-next-line: prefer-readonly
     private actionSourceFileCollection: Map<string, ActionSourceFile> = new Map<string, ActionSourceFile>();
 
-    private currentActionSourceFile: ActionSourceFile;
+    private currentActionSourceFile: ActionSourceFile | undefined;
 
+    // Track the current Source file that is being processed.
     protected visitSourceFile(node: ts.SourceFile): void {
         const sourceFileName = node.fileName;
-
         this.currentActionSourceFile = this.actionSourceFileCollection.get(sourceFileName);
 
+        // If this source file is being parsed the first time, keep a copy of it.
         if (!this.currentActionSourceFile) {
             this.currentActionSourceFile = new ActionSourceFile(node);
             this.actionSourceFileCollection.set(sourceFileName, this.currentActionSourceFile);
         }
 
-        if (
-            sourceFileName.indexOf(
-                'C:/Users/igodil.REDMOND/Source/Repos/M365AdminUX/src/microsoft-search/connectors/addConnector-wizard/addConnectorWizard.redux.ts'
-            ) !== -1
-        ) {
+        if (sourceFileName.indexOf('C:/Users/igodil.REDMOND/Source/Repos/M365AdminUX/src/microsoft-search/connectors/') !== -1) {
             this.printActionData = true;
         } else {
-            this.printActionData = false;
+            this.printActionData = true;
         }
 
-        this.print('<table>');
-        this.print('<tr><td><div class="source">SourceFile: ' + sourceFileName + '</div></td></tr>');
-
+        // As part of this visitor, will hit various property declarations
         super.visitSourceFile(node);
 
         if (this.printActionData) {
+            // Prints all the action objects.
             this.printActionObjects();
         }
-        this.print('</table>');
+    }
+
+    protected walkChildren(node: ts.Node): void {
+        super.walkChildren(node);
+
+        // After having finished walking the children of the node (i.e. processing the call Expressions), if we were
+        // Processing the call expression, then reset the processingOn capability
+        if (node.kind === ts.SyntaxKind.CallExpression) {
+            if (this.processingStateVariableDeclaration.processingOn) {
+                this.processingStateVariableDeclaration.reset();
+            }
+        }
+        if (node.kind === ts.SyntaxKind.VariableDeclaration) {
+            this.processingActionPropertyDeclaration = false;
+        }
+    }
+
+    // Call Expressions are calls to methods, so in case of call expressions that start with 'createStateField', we know there is a state variable in process
+    protected visitCallExpression(node: ts.CallExpression): void {
+        // If the call is to 'CreateStateField', parse out the Identifier, that is the State variable name.
+        if (node.expression.getText() === 'createStateField') {
+            //ProcessingActionDeclaration is true when we visit a Variable Declaration.
+            // Since we are in a call expression that was part of the VariableDeclaration, we need to turn  ProcessingActionDeclaration
+            // To be false here.
+            this.processingActionPropertyDeclaration = false;
+
+            if (this.currentActionSourceFile) {
+                // This is just createStateField call
+                this.currentActionSourceFile.addCreateStateIdentifier(node.expression as ts.Identifier);
+                //console.log('IRUM:::: ' + node.arguments[0].getFullText());
+
+                // This is the full Variable Declaration for the State object.
+                this.currentActionSourceFile.addCreateActionTypes(node.parent as ts.VariableDeclaration, true);
+
+                // Flag that we can use for processing other object literals etc.
+                this.processingStateVariableDeclaration.processingOn = true;
+            }
+        }
+        super.visitCallExpression(node);
+    }
+
+    protected visitObjectLiteralExpression(node: ts.ObjectLiteralExpression): void {
+        if (this.processingActionPropertyDeclaration) {
+            const possibleActionDefinition = new PossibleActionDefinition();
+            possibleActionDefinition.enclosingObjectLiteralDefinition = node;
+
+            if (possibleActionDefinition.isEnclosingObjectLiteralActionDefinition()) {
+                //   console.log('Found action definition: ');
+            }
+        } else if (this.processingStateVariableDeclaration.processingOn) {
+            this.processingStateVariableDeclaration.processingObjectLiteral = true;
+            this.processingStateVariableDeclaration.processingOn = false;
+        }
+        super.visitObjectLiteralExpression(node);
+    }
+
+    protected visitPropertyAssignment(node: ts.PropertyAssignment): void {
+        if (this.processingStateVariableDeclaration.processingObjectLiteral) {
+            this.processingStateVariableDeclaration.processingPropertyAssignment = true;
+        }
+        super.visitPropertyAssignment(node);
+    }
+
+    protected visitPropertyAccessExpression(node: ts.PropertyAccessExpression): void {
+        if (this.processingStateVariableDeclaration.processingPropertyAssignment) {
+            const actionFullName = node.expression.getFullText() + '.' + node.name.text;
+
+            (this.currentActionSourceFile as ActionSourceFile).addActionForStateVariable(actionFullName, node);
+            this.processingStateVariableDeclaration.processingPropertyAssignment = false;
+        }
+        super.visitPropertyAccessExpression(node);
+    }
+
+    protected visitVariableDeclaration(node: ts.VariableDeclaration): void {
+        // If hitting a variable declaration, we anticipate this could be an action defnition.
+        this.processingActionPropertyDeclaration = true;
+        super.visitVariableDeclaration(node);
+    }
+
+    protected visitIdentifier(node: ts.Identifier): void {
+        this.print('<tr><td>visitIdentifier: ' + node.text);
+
+        if (node.text === 'createActionTypes') {
+            if (this.currentActionSourceFile) {
+                this.currentActionSourceFile.addCreateActionTypes(node.parent as ts.VariableDeclaration);
+            }
+        }
+
+        super.visitIdentifier(node);
+
+        // Reset Flag that we can use for processing other object literals etc.
+        // this.processingStateVariableDeclaration =  false;
+        this.print('</td></tr>');
     }
 
     private printActionObjects(): void {
         this.actionSourceFileCollection.forEach((value: ActionSourceFile, _key: string) => {
             value.print();
         });
+    }
+
+    private print(data: string): void {
+        if (this.printData) {
+            console.log(data);
+        }
+    }
+
+    /*
+
+     protected visitMethodDeclaration(node: ts.MethodDeclaration): void {
+        this.print('<tr><td>visitMethodDeclaration: ' + node.name);
+        super.visitMethodDeclaration(node);
+        this.print('</td></tr>');
     }
 
     protected visitAnyKeyword(node: ts.Node): void {
@@ -149,95 +207,9 @@ class RulesWalker extends Lint.RuleWalker {
         super.visitArrowFunction(node);
         this.print('</td></tr>');
     }
-
-    protected walkChildren(node: ts.Node): void {
-        super.walkChildren(node);
-
-        if (node.kind === ts.SyntaxKind.CallExpression) {
-            if (this.processingStateVariableDeclaration.processingOn) {
-                this.processingStateVariableDeclaration.reset();
-            }
-        }
-        if (node.kind === ts.SyntaxKind.VariableDeclaration) {
-            this.processingActionPropertyDeclaration = false;
-        }
-    }
-
-    protected visitCallExpression(node: ts.CallExpression): void {
-        if (node.expression.getText() === 'createStateField') {
-            if (this.currentActionSourceFile) {
-                this.currentActionSourceFile.addCreateStateIdentifier(node.expression as ts.Identifier);
-                this.currentActionSourceFile.addCreateActionTypes(node.parent as ts.VariableDeclaration, true);
-
-                // Flag that we can use for processing other object literals etc.
-                this.processingStateVariableDeclaration.processingOn = true;
-            }
-        }
-        super.visitCallExpression(node);
-    }
-
-    protected visitObjectLiteralExpression(node: ts.ObjectLiteralExpression): void {
-        if (this.processingActionPropertyDeclaration) {
-            const possibleActionDefinition = new PossibleActionDefinition();
-            possibleActionDefinition.enclosingObjectLiteralDefinition = node;
-
-            if (possibleActionDefinition.isEnclosingObjectLiteralActionDefinition()) {
-                console.log('Found action definition: ');
-            }
-        } else if (this.processingStateVariableDeclaration.processingOn) {
-            this.processingStateVariableDeclaration.processingObjectLiteral = true;
-            this.processingStateVariableDeclaration.processingOn = false;
-        }
-        super.visitObjectLiteralExpression(node);
-    }
-
-    protected visitPropertyAssignment(node: ts.PropertyAssignment): void {
-        if (this.processingStateVariableDeclaration.processingObjectLiteral) {
-            this.processingStateVariableDeclaration.processingPropertyAssignment = true;
-        }
-        super.visitPropertyAssignment(node);
-    }
-
-    protected visitPropertyAccessExpression(node: ts.PropertyAccessExpression): void {
-        if (this.processingStateVariableDeclaration.processingPropertyAssignment) {
-            const actionFullName = node.expression.getFullText() + '.' + node.name.text;
-            (this.currentActionSourceFile as ActionSourceFile).addActionForStateVariable(actionFullName, node);
-            this.processingStateVariableDeclaration.processingPropertyAssignment = false;
-        }
-        super.visitPropertyAccessExpression(node);
-    }
-
-    protected visitVariableDeclaration(node: ts.VariableDeclaration): void {
-        this.processingActionPropertyDeclaration = true;
-        super.visitVariableDeclaration(node);
-    }
-
-    protected visitPropertyDeclaration(node: ts.PropertyDeclaration): void {
+      protected visitPropertyDeclaration(node: ts.PropertyDeclaration): void {
         super.visitPropertyDeclaration(node);
     }
-
-    protected visitIdentifier(node: ts.Identifier): void {
-        this.print('<tr><td>visitIdentifier: ' + node.text);
-
-        if (node.text === 'createActionTypes') {
-            if (this.currentActionSourceFile) {
-                this.currentActionSourceFile.addCreateActionTypes(node.parent as ts.VariableDeclaration);
-            }
-        }
-
-        super.visitIdentifier(node);
-
-        // Reset Flag that we can use for processing other object literals etc.
-        // this.processingStateVariableDeclaration =  false;
-        this.print('</td></tr>');
-    }
-
-    protected visitMethodDeclaration(node: ts.MethodDeclaration): void {
-        this.print('<tr><td>visitMethodDeclaration: ' + node.name);
-        super.visitMethodDeclaration(node);
-        this.print('</td></tr>');
-    }
-
     protected visitArrayLiteralExpression(node: ts.ArrayLiteralExpression): void {
         super.visitArrayLiteralExpression(node);
     }
@@ -453,11 +425,5 @@ class RulesWalker extends Lint.RuleWalker {
     }
     protected visitNode(node: ts.Node): void {
         super.visitNode(node);
-    }
-
-    private print(data: string): void {
-        if (this.printData) {
-            console.log(data);
-        }
-    }
+    }*/
 }
