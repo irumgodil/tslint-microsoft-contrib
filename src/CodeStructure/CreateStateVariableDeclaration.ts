@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 
 // Example Statement:
-/*
+/*e
 const selectedStepId = createStateField('0', {
     [addConnectorWizardActionTypes.SetSelectedStep]: (
       _: string,
@@ -62,6 +62,45 @@ export class CreateStateVariableDeclaration {
             console.log('<div>' + key + '</div>');
         });
 
+        this.printTests();
+
         console.log('</td></tr>');
+    }
+
+    // IRUMTODO: Refactor to its own class
+
+    public printTests(): void {
+        console.log('<td>');
+        console.log('<table>');
+
+        const originalState = 'const originalState = ' + this.initializedValue + ';';
+        const expectedState = 'const expectedState = {Fillout};';
+
+        this.actionPropertyExpressions.forEach((_value: ts.PropertyAccessExpression, key: string) => {
+            console.log('<tr className="testCase">');
+            console.log('<td>');
+
+            const testAction = 'const testAction = {' + 'type: ' + key + ',' + 'payload: expectedState};';
+
+            const actualState = 'const actualState =  ' + this.varName + '(originalState, testAction);';
+            const test = 'expect(actualState).toEqual(expectedState);';
+
+            console.log('<div>');
+            console.log(originalState);
+            console.log('</div><div>');
+            console.log(expectedState);
+            console.log('</div><div>');
+            console.log(testAction);
+            console.log('</div><div>');
+            console.log(actualState);
+            console.log('</div><div>');
+            console.log(test);
+            console.log('</div>');
+
+            console.log('</td>');
+            console.log('</tr>');
+        });
+        console.log('</table>');
+        console.log('</td>');
     }
 }

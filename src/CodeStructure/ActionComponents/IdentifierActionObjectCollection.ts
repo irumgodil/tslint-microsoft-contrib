@@ -6,7 +6,7 @@ export class IdentifierActionObjectCollection extends StateActionComponentCollec
     public print(): void {
         this.stateActionComponentObject.forEach(element => {
             // tslint-disable:next-line
-            console.log('<div className="stateIdentifier">-----Found State/Action Variable: ' + (element as ts.Identifier).text + '</div>');
+            //console.log('<div className="stateIdentifier">-----Found State/Action Variable: ' + (element as ts.Identifier).text + '</div>');
         });
     }
 }
