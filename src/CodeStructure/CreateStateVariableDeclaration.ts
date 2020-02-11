@@ -73,11 +73,6 @@ export class CreateStateVariableDeclaration {
         console.log('<td>');
         console.log('<table>');
 
-        const describeString = "describe('reducers for " + this.varName + "', () => {";
-        const itString = "it('should set the value for " + this.varName + "', () => {";
-
-        const endTag = '});';
-
         const originalState = 'const originalState = ' + this.initializedValue + ';';
         const expectedState = 'const expectedState = {Fillout};';
 
@@ -85,6 +80,10 @@ export class CreateStateVariableDeclaration {
             console.log('<tr className="testCase">');
             console.log('<td>');
 
+            const describeString = "describe('reducers for " + this.varName + ' using action: ' + key + "', () => {";
+            const itString = "it('should set the value for " + this.varName + ' using action: ' + key + "', () => {";
+
+            const endTag = '});';
             const testAction = 'const testAction = {' + 'type: ' + key + ',' + 'payload: expectedState};';
 
             const actualState = 'const actualState =  ' + this.varName + '(originalState, testAction);';
