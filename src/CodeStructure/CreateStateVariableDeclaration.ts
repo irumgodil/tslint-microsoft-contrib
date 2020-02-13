@@ -71,14 +71,14 @@ export class CreateStateVariableDeclaration {
 
     public printTests(): void {
         console.log('<td>');
-        console.log('<table>');
+        // console.log('<table>');
 
         const originalState = 'const originalState = ' + this.initializedValue + ';';
         const expectedState = 'const expectedState = {Fillout};';
 
         this.actionPropertyExpressions.forEach((_value: ts.PropertyAccessExpression, key: string) => {
-            console.log('<tr className="testCase">');
-            console.log('<td>');
+            //   console.log('<tr className="testCase">');
+            // console.log('<td>');
 
             const describeString = "describe('reducers for " + this.varName + ' using action: ' + key + "', () => {";
             const itString = "it('should set the value for " + this.varName + ' using action: ' + key + "', () => {";
@@ -111,10 +111,10 @@ export class CreateStateVariableDeclaration {
             console.log(endTag);
             console.log('</div>');
 
-            console.log('</td>');
-            console.log('</tr>');
+            //        console.log('</td>');
+            //      console.log('</tr>');
         });
-        console.log('</table>');
+        //console.log('</table>');
         console.log('</td>');
     }
 }
