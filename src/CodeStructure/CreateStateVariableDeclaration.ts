@@ -43,10 +43,9 @@ export class CreateStateVariableDeclaration {
         this.setName();
     }
 
-    public addActionPropertyExpression(actionName: string, propertyAccessExpression: ts.PropertyAccessExpression) {
-        this.actionPropertyExpressions.set(actionName, propertyAccessExpression);
-    }
-
+    /**
+     * Sets the state variable name.
+     */
     private setName(): void {
         // The variable declaration that is being set is used as the Identifier
         const identifierObject = this.overallDeclaration.name as ts.Identifier;
@@ -80,6 +79,10 @@ export class CreateStateVariableDeclaration {
                 });
             }
         }
+    }
+
+    public addActionPropertyExpression(actionName: string, propertyAccessExpression: ts.PropertyAccessExpression) {
+        this.actionPropertyExpressions.set(actionName, propertyAccessExpression);
     }
 
     /**

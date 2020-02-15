@@ -118,13 +118,54 @@ class RulesWalker extends Lint.RuleWalker {
             }
         } else if (this.processingStateVariableDeclaration.processingOn) {
             // will come here if createStateField was hit, at that point we already know that this is not an
-            // Action definition.
+            // Action definition. (we know this is coming from createStateField, as processingOn is set to true)
 
             // hit processingObjectLiteral as part of the 'createStateField' traversal.
             this.processingStateVariableDeclaration.processingObjectLiteral = true;
             this.processingStateVariableDeclaration.processingOn = false;
         }
         super.visitObjectLiteralExpression(node);
+    }
+
+    /***
+     * A property assignment is an actual setting of a property e.g. key: Value is a propertyAssignment
+     *
+     * We use this node for state variable processing. When we are in the createStateTraversal.
+     * The createStateField method's second argument is a handler:
+     * handlers: { [key: string]: ReducerFunction<S> }
+     *
+     * > So if we know we are traversing createStateField
+     * > And have hit an objectLiteral expression, { [key: string]: ReducerFunction<S> }
+     * > We watch out for propertyAssignment to turn on the flag that we are processing property assignment.
+     * This is helpful as now in the children when we hit the PropertyAccessExpression, we use that value to extract action data
+     * affecting this state variable.
+     */
+    protected visitPropertyAssignment(node: ts.PropertyAssignment): void {
+        if (this.processingStateVariableDeclaration.processingObjectLiteral) {
+            this.processingStateVariableDeclaration.processingPropertyAssignment = true;
+        }
+        super.visitPropertyAssignment(node);
+    }
+
+    /**
+     * Logic:
+     * > To be sure that we are looking at actions affecting state variables, we look at our flag.
+     * If we are processing a propertyAssignment (i.e. the handler part of the createStateField), then
+     * we parse the action name and store it.
+     *
+     * Also, full node is passed into ActionSourceFile object to store the data about this node.     *
+     *
+     * @param node this is a propertAccess example: objectName.property
+     */
+    protected visitPropertyAccessExpression(node: ts.PropertyAccessExpression): void {
+        if (this.processingStateVariableDeclaration.processingPropertyAssignment) {
+            const actionFullName = node.expression.getFullText() + '.' + node.name.text;
+
+            // Full node is passed into ActionSourceFile object to store the data about this node.
+            (this.currentActionSourceFile as ActionSourceFile).addActionForStateVariable(actionFullName, node);
+            this.processingStateVariableDeclaration.processingPropertyAssignment = false;
+        }
+        super.visitPropertyAccessExpression(node);
     }
 
     /***
@@ -141,7 +182,6 @@ class RulesWalker extends Lint.RuleWalker {
             if (this.currentActionSourceFile) {
                 // This is just createStateField call
                 this.currentActionSourceFile.addCreateStateIdentifier(node.expression as ts.Identifier);
-                //console.log('IRUM:::: ' + node.arguments[0].getFullText());
 
                 // This is the full Variable Declaration for the State object.
                 this.currentActionSourceFile.addCreateActionTypes(node.parent as ts.VariableDeclaration, true);
@@ -151,23 +191,6 @@ class RulesWalker extends Lint.RuleWalker {
             }
         }
         super.visitCallExpression(node);
-    }
-
-    protected visitPropertyAssignment(node: ts.PropertyAssignment): void {
-        if (this.processingStateVariableDeclaration.processingObjectLiteral) {
-            this.processingStateVariableDeclaration.processingPropertyAssignment = true;
-        }
-        super.visitPropertyAssignment(node);
-    }
-
-    protected visitPropertyAccessExpression(node: ts.PropertyAccessExpression): void {
-        if (this.processingStateVariableDeclaration.processingPropertyAssignment) {
-            const actionFullName = node.expression.getFullText() + '.' + node.name.text;
-
-            (this.currentActionSourceFile as ActionSourceFile).addActionForStateVariable(actionFullName, node);
-            this.processingStateVariableDeclaration.processingPropertyAssignment = false;
-        }
-        super.visitPropertyAccessExpression(node);
     }
 
     protected visitIdentifier(node: ts.Identifier): void {
@@ -198,6 +221,9 @@ class RulesWalker extends Lint.RuleWalker {
         }
         if (node.kind === ts.SyntaxKind.VariableDeclaration) {
             this.processingActionPropertyDeclaration = false;
+
+            //If we were hitting the call expressions, reset those too
+            this.processingStateVariableDeclaration.reset();
         }
     }
 
@@ -214,7 +240,6 @@ class RulesWalker extends Lint.RuleWalker {
     }
 
     /*
-
      protected visitMethodDeclaration(node: ts.MethodDeclaration): void {
         this.print('<tr><td>visitMethodDeclaration: ' + node.name);
         super.visitMethodDeclaration(node);
