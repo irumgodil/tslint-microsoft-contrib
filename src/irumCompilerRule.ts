@@ -30,22 +30,35 @@ export class Rule extends Lint.Rules.AbstractRule {
 class RulesWalker extends Lint.RuleWalker {
     public static FAILURE_STRING = 'no multi-arg functions allowed';
 
+    // The current action source file.
+    private currentActionSourceFile: ActionSourceFile | undefined;
+
+    /**
+     * Flag to check if we have hit a variable declaration, that could potentially be an action definition.
+     *
+     * Logic:
+     * Set to true when a variableDeclaration is hit, during the processing of this variable, if we hit a call expression that is 'createStateField',
+     * we set this variable to be false.
+     * Otherwise, while this flag is true, i.e. we started on a variable declaration traversal and now hit an ObjectDeclaration ({prop:value}), we mark it
+     * as a potential action object. At that point it is checked if this is really an action.
+     *
+     */
+    private processingActionPropertyDeclaration = false;
+
     // State machine for processing the variable declaration/call expression statements - to track which part of the statement we are processing
     private processingStateVariableDeclaration = new ProcessingStateVariableDeclarationStatus();
-
-    private printActionData = false;
-    private printData = false;
-
-    // Processing action variable declaration
-    private processingActionPropertyDeclaration = false;
 
     // Action Source File collection
     // tslint:disable-next-line: prefer-readonly
     private actionSourceFileCollection: Map<string, ActionSourceFile> = new Map<string, ActionSourceFile>();
 
-    private currentActionSourceFile: ActionSourceFile | undefined;
+    // Printing variables.
+    private printActionData = false;
+    private printData = false;
 
-    // Track the current Source file that is being processed.
+    /***
+     *  Track the current Source file that is being processed.
+     */
     protected visitSourceFile(node: ts.SourceFile): void {
         const sourceFileName = node.fileName;
         this.currentActionSourceFile = this.actionSourceFileCollection.get(sourceFileName);
@@ -72,22 +85,51 @@ class RulesWalker extends Lint.RuleWalker {
         }
     }
 
-    protected walkChildren(node: ts.Node): void {
-        super.walkChildren(node);
-
-        // After having finished walking the children of the node (i.e. processing the call Expressions), if we were
-        // Processing the call expression, then reset the processingOn capability
-        if (node.kind === ts.SyntaxKind.CallExpression) {
-            if (this.processingStateVariableDeclaration.processingOn) {
-                this.processingStateVariableDeclaration.reset();
-            }
-        }
-        if (node.kind === ts.SyntaxKind.VariableDeclaration) {
-            this.processingActionPropertyDeclaration = false;
-        }
+    /***
+     * When hit a variable declaration, we mark actionprocessing to be true, so when we hit an objectliteral
+     * expression, we know this is inside the bounds of a variable declaration.
+     */
+    protected visitVariableDeclaration(node: ts.VariableDeclaration): void {
+        // If hitting a variable declaration, we anticipate this could be an action defnition.
+        this.processingActionPropertyDeclaration = true;
+        super.visitVariableDeclaration(node);
     }
 
-    // Call Expressions are calls to methods, so in case of call expressions that start with 'createStateField', we know there is a state variable in process
+    /**
+      * ** Note: this is not the code that we are using today to print actions for test-cases.**
+      * When we hit an object Declaration, we try to see if this is an action definition.
+
+      *
+      * Logic:
+      * > if this.processingActionPropertyDeclaration to be tru
+      *
+      * ObjectLiteral definition:
+      * - A JavaScript object literal is a comma-separated list of name-value pairs wrapped in curly braces.
+      * Object literals encapsulate data, enclosing it in a tidy package.
+      *
+     */
+    protected visitObjectLiteralExpression(node: ts.ObjectLiteralExpression): void {
+        if (this.processingActionPropertyDeclaration) {
+            const possibleActionDefinition = new PossibleActionDefinition();
+            possibleActionDefinition.enclosingObjectLiteralDefinition = node;
+
+            if (possibleActionDefinition.isEnclosingObjectLiteralActionDefinition()) {
+                //   console.log('Found action definition: ');
+            }
+        } else if (this.processingStateVariableDeclaration.processingOn) {
+            // will come here if createStateField was hit, at that point we already know that this is not an
+            // Action definition.
+
+            // hit processingObjectLiteral as part of the 'createStateField' traversal.
+            this.processingStateVariableDeclaration.processingObjectLiteral = true;
+            this.processingStateVariableDeclaration.processingOn = false;
+        }
+        super.visitObjectLiteralExpression(node);
+    }
+
+    /***
+     * Call Expressions are calls to methods, so in case of call expressions that start with 'createStateField', we know there is a state variable in process
+     */
     protected visitCallExpression(node: ts.CallExpression): void {
         // If the call is to 'CreateStateField', parse out the Identifier, that is the State variable name.
         if (node.expression.getText() === 'createStateField') {
@@ -111,21 +153,6 @@ class RulesWalker extends Lint.RuleWalker {
         super.visitCallExpression(node);
     }
 
-    protected visitObjectLiteralExpression(node: ts.ObjectLiteralExpression): void {
-        if (this.processingActionPropertyDeclaration) {
-            const possibleActionDefinition = new PossibleActionDefinition();
-            possibleActionDefinition.enclosingObjectLiteralDefinition = node;
-
-            if (possibleActionDefinition.isEnclosingObjectLiteralActionDefinition()) {
-                //   console.log('Found action definition: ');
-            }
-        } else if (this.processingStateVariableDeclaration.processingOn) {
-            this.processingStateVariableDeclaration.processingObjectLiteral = true;
-            this.processingStateVariableDeclaration.processingOn = false;
-        }
-        super.visitObjectLiteralExpression(node);
-    }
-
     protected visitPropertyAssignment(node: ts.PropertyAssignment): void {
         if (this.processingStateVariableDeclaration.processingObjectLiteral) {
             this.processingStateVariableDeclaration.processingPropertyAssignment = true;
@@ -143,12 +170,6 @@ class RulesWalker extends Lint.RuleWalker {
         super.visitPropertyAccessExpression(node);
     }
 
-    protected visitVariableDeclaration(node: ts.VariableDeclaration): void {
-        // If hitting a variable declaration, we anticipate this could be an action defnition.
-        this.processingActionPropertyDeclaration = true;
-        super.visitVariableDeclaration(node);
-    }
-
     protected visitIdentifier(node: ts.Identifier): void {
         this.print('<tr><td>visitIdentifier: ' + node.text);
 
@@ -163,6 +184,21 @@ class RulesWalker extends Lint.RuleWalker {
         // Reset Flag that we can use for processing other object literals etc.
         // this.processingStateVariableDeclaration =  false;
         this.print('</td></tr>');
+    }
+
+    protected walkChildren(node: ts.Node): void {
+        super.walkChildren(node);
+
+        // After having finished walking the children of the node (i.e. processing the call Expressions), if we were
+        // Processing the call expression, then reset the processingOn capability
+        if (node.kind === ts.SyntaxKind.CallExpression) {
+            if (this.processingStateVariableDeclaration.processingOn) {
+                this.processingStateVariableDeclaration.reset();
+            }
+        }
+        if (node.kind === ts.SyntaxKind.VariableDeclaration) {
+            this.processingActionPropertyDeclaration = false;
+        }
     }
 
     private printActionObjects(): void {

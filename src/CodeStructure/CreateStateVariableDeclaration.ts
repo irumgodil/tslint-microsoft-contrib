@@ -14,13 +14,32 @@ export class CreateStateVariableDeclaration {
     // This is the full variable declaration, see definition of 'selectedStepId' above
     private overallDeclaration: ts.VariableDeclaration;
 
+    // The Map of all the Actions that we are processing:
+    /*[addConnectorWizardActionTypes.SetSelectedStep]: (
+        _: string,
+        action: ReturnType<typeof actions.setSelectedStepAction>
+      ) => {
+        return action.payload;
+      }*/
     private actionPropertyExpressions: Map<string, ts.PropertyAccessExpression> = new Map();
+
+    /**
+     * The State variable name.
+     */
     private varName: string = '';
 
+    /***
+     * Initialized value of this state variable
+     * Logic:
+     * > Pull out the initializer part of the Variable Declaration and checks its arguments.
+     * > Takes the first argument of the initializer as the initialization value.
+     */
     private initializedValue: string = '';
 
     constructor(createStateVar: ts.VariableDeclaration) {
         this.overallDeclaration = createStateVar;
+
+        // Set the name of the state variable.
         this.setName();
     }
 
@@ -29,6 +48,7 @@ export class CreateStateVariableDeclaration {
     }
 
     private setName(): void {
+        // The variable declaration that is being set is used as the Identifier
         const identifierObject = this.overallDeclaration.name as ts.Identifier;
 
         if (identifierObject) {
@@ -36,8 +56,18 @@ export class CreateStateVariableDeclaration {
         }
     }
 
+    /**
+     * Gets the initializer Value of this State variable.
+     *
+     * Logic:
+     * > Pull out the initializer part of the Variable Declaration and checks its arguments.
+     * > Takes the first argument of the initializer as the initialization value.
+     *
+     * */
     public process(): void {
+        // Uses the right hand side of the Variable declaration as the initializer.
         const initializer: ts.CallExpression = this.overallDeclaration.initializer as ts.CallExpression;
+
         if (initializer) {
             const args = initializer.arguments;
 
@@ -52,6 +82,9 @@ export class CreateStateVariableDeclaration {
         }
     }
 
+    /**
+     * This is the table that is printed in the main html for test cases.
+     */
     public print(): void {
         console.log('<tr>');
         console.log('<td><b>' + this.varName + '</b></td>');
@@ -71,15 +104,10 @@ export class CreateStateVariableDeclaration {
 
     public printTests(): void {
         console.log('<td>');
-        // console.log('<table>');
-
         const originalState = 'const originalState = ' + this.initializedValue + ';';
         const expectedState = 'const expectedState = {Fillout};';
 
         this.actionPropertyExpressions.forEach((_value: ts.PropertyAccessExpression, key: string) => {
-            //   console.log('<tr className="testCase">');
-            // console.log('<td>');
-
             const describeString = "describe('reducers for " + this.varName + ' using action: ' + key + "', () => {";
             const itString = "it('should set the value for " + this.varName + ' using action: ' + key + "', () => {";
 
@@ -110,11 +138,8 @@ export class CreateStateVariableDeclaration {
             console.log('</div><div>');
             console.log(endTag);
             console.log('</div>');
-
-            //        console.log('</td>');
-            //      console.log('</tr>');
         });
-        //console.log('</table>');
+
         console.log('</td>');
     }
 }
