@@ -101,7 +101,7 @@ class RulesWalker extends Lint.RuleWalker {
 
       *
       * Logic:
-      * > if this.processingActionPropertyDeclaration to be tru
+      * > if this.processingActionPropertyDeclaration to be true
       *
       * ObjectLiteral definition:
       * - A JavaScript object literal is a comma-separated list of name-value pairs wrapped in curly braces.
