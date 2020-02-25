@@ -1,0 +1,24 @@
+
+export const wizardSelector = (state: AppState) => {
+  return state.getIn(['microsoftSearch', 'connectorList', 'addConnectorWizard'])
+}
+
+export const isAddConnectorWizardOpenedSelector = (state: AppState) => {
+  return state.getIn(['microsoftSearch', 'connectorList', 'isAddConnectorWizardOpened'])
+}
+
+export const selectedStepIdSelector = createSelector([wizardSelector], (wizard: AddConnectorStates) =>
+  wizard!.get('selectedStepId')
+)
+
+export const isConnectorWizardEditModeSelector = createSelector([wizardSelector], (wizard: AddConnectorStates) =>
+  wizard!.get('isEditMode')
+)
+
+export const isWizardCompleteSelector = createSelector([wizardSelector], (wizard: AddConnectorStates) =>
+  wizard!.get('wizardComplete')
+)
+
+export const wizardStepsSelector = createSelector([wizardSelector], (wizard: AddConnectorStates) =>
+  wizard!.get('wizardSteps')
+)
