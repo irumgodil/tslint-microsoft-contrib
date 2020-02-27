@@ -56,7 +56,8 @@ class RulesWalker extends Lint.RuleWalker {
         }
 
         //   if (sourceFileName.indexOf('C:/Users/igodil.REDMOND/Source/Repos/M365AdminUX/src/microsoft-search/connectors/') !== -1) {
-        if (sourceFileName.indexOf('redux') !== -1) {
+        //  if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
+        if (true) {
             this.printSelectors = true;
         } else {
             this.printSelectors = false;
@@ -79,118 +80,51 @@ class RulesWalker extends Lint.RuleWalker {
         // Keep track of this variable as we might need it later.
         this.processingSelectorDeclarationStatus.currentVariableBeingProcessed = node;
         super.visitVariableDeclaration(node);
+
+        this.processingSelectorDeclarationStatus.reset();
     }
 
     /***
      * Call Expressions are calls to methods, so in case of call expressions that start with 'createStateField', we know there is a state variable in process
      */
     protected visitCallExpression(node: ts.CallExpression): void {
-        // If the call is to 'createSelector', parse out the variable declaration
-        if (node.expression.getText() === 'createSelector') {
-            if (this.currentSelectorSourceFile) {
-                // This is the full Variable Declaration for the createSelector call
-                this.currentSelectorSourceFile.addCreateSelectorsNode(node.parent as ts.VariableDeclaration, node);
-            }
-        } else if (node.expression.getText() === 'state.getIn' && node.parent.kind === ts.SyntaxKind.ReturnStatement) {
-            // We only parse this if this is a return statement, as other usages of this call could occcur at other points in the code.
+        if (this.processingSelectorDeclarationStatus.currentVariableBeingProcessed) {
+            // If the call is to 'createSelector', parse out the variable declaration
+            if (node.expression.getText() === 'createSelector') {
+                if (this.currentSelectorSourceFile) {
+                    // To-do - where else to set this to false.
+                    this.processingSelectorDeclarationStatus.processingCreateSelectorOn = true;
+                    this.processingSelectorDeclarationStatus.createSelectorExpression = node;
+                }
+            } else if (node.expression.getText() === 'state.getIn' && node.parent.kind === ts.SyntaxKind.ReturnStatement) {
+                // We only parse this if this is a return statement, as other usages of this call could occcur at other points in the code.
 
-            if (this.currentSelectorSourceFile) {
-                // This is the full Variable Declaration for the createSelector call
-                this.currentSelectorSourceFile.addStateSelectorsNode(this.processingSelectorDeclarationStatus
-                    .currentVariableBeingProcessed as ts.VariableDeclaration);
+                if (this.currentSelectorSourceFile) {
+                    // This is the full Variable Declaration for the createSelector call
+                    this.currentSelectorSourceFile.addStateSelectorsNode(
+                        this.processingSelectorDeclarationStatus.currentVariableBeingProcessed as ts.VariableDeclaration,
+                        node
+                    );
+                }
+            } else if (node.expression.getText().indexOf('get') !== -1) {
+                // We only parse this if this is a return statement, as other usages of this call could occcur at other points in the code.
+                if (this.processingSelectorDeclarationStatus.processingCreateSelectorOn && this.currentSelectorSourceFile) {
+                    // This is the full Variable Declaration for the createSelector call
+                    this.currentSelectorSourceFile.addCreateSelectorsNode(
+                        this.processingSelectorDeclarationStatus.currentVariableBeingProcessed as ts.VariableDeclaration,
+                        this.processingSelectorDeclarationStatus.createSelectorExpression as ts.CallExpression,
+                        node
+                    );
+                }
+
+                this.processingSelectorDeclarationStatus.processingCreateSelectorOn = false;
             }
         }
         super.visitCallExpression(node);
     }
 
-    /**
-      * ** Note: this is not the code that we are using today to print actions for test-cases.**
-      * When we hit an object Declaration, we try to see if this is an action definition.
-
-      *
-      * Logic:
-      * > if this.processingActionPropertyDeclaration to be true
-      *
-      * ObjectLiteral definition:
-      * - A JavaScript object literal is a comma-separated list of name-value pairs wrapped in curly braces.
-      * Object literals encapsulate data, enclosing it in a tidy package.
-      *
-     */
-    protected visitObjectLiteralExpression(node: ts.ObjectLiteralExpression): void {
-        /*   if (this.processingSelectorDeclaration) {
-            const possibleActionDefinition = new PossibleActionDefinition();
-            possibleActionDefinition.enclosingObjectLiteralDefinition = node;
-
-            if (possibleActionDefinition.isEnclosingObjectLiteralActionDefinition()) {
-                //   console.log('Found action definition: ');
-            }
-        } else if (this.processingStateVariableDeclaration.processingOn) {
-            // will come here if createStateField was hit, at that point we already know that this is not an
-            // Action definition. (we know this is coming from createStateField, as processingOn is set to true)
-
-            // hit processingObjectLiteral as part of the 'createStateField' traversal.
-            this.processingStateVariableDeclaration.processingObjectLiteral = true;
-            this.processingStateVariableDeclaration.processingOn = false;
-        }*/
-        super.visitObjectLiteralExpression(node);
-    }
-
-    /***
-     * A property assignment is an actual setting of a property e.g. key: Value is a propertyAssignment
-     *
-     * We use this node for state variable processing. When we are in the createStateTraversal.
-     * The createStateField method's second argument is a handler:
-     * handlers: { [key: string]: ReducerFunction<S> }
-     *
-     * > So if we know we are traversing createStateField
-     * > And have hit an objectLiteral expression, { [key: string]: ReducerFunction<S> }
-     * > We watch out for propertyAssignment to turn on the flag that we are processing property assignment.
-     * This is helpful as now in the children when we hit the PropertyAccessExpression, we use that value to extract action data
-     * affecting this state variable.
-     */
-    protected visitPropertyAssignment(node: ts.PropertyAssignment): void {
-        /*if (this.processingStateVariableDeclaration.processingObjectLiteral) {
-            this.processingStateVariableDeclaration.processingPropertyAssignment = true;
-        }*/
-        super.visitPropertyAssignment(node);
-    }
-
-    /**
-     * Logic:
-     * > To be sure that we are looking at actions affecting state variables, we look at our flag.
-     * If we are processing a propertyAssignment (i.e. the handler part of the createStateField), then
-     * we parse the action name and store it.
-     *
-     * Also, full node is passed into ActionSourceFile object to store the data about this node.     *
-     *
-     * @param node this is a propertAccess example: objectName.property
-     */
-    protected visitPropertyAccessExpression(node: ts.PropertyAccessExpression): void {
-        /*  if (this.processingStateVariableDeclaration.processingPropertyAssignment) {
-            const actionFullName = node.expression.getFullText() + '.' + node.name.text;
-
-            // Full node is passed into ActionSourceFile object to store the data about this node.
-            (this.currentSelectorSourceFile as ActionSourceFile).addActionForStateVariable(actionFullName, node);
-            this.processingStateVariableDeclaration.processingPropertyAssignment = false;
-        }*/
-        super.visitPropertyAccessExpression(node);
-    }
-
     protected walkChildren(node: ts.Node): void {
         super.walkChildren(node);
-
-        /* // After having finished walking the children of the node (i.e. processing the call Expressions), if we were
-        // Processing the call expression, then reset the processingOn capability
-        if (node.kind === ts.SyntaxKind.CallExpression) {
-            if (this.processingStateVariableDeclaration.processingOn) {
-                this.processingStateVariableDeclaration.reset();
-            }
-        }
-        if (node.kind === ts.SyntaxKind.VariableDeclaration) {
-
-            //If we were hitting the call expressions, reset those too
-            this.processingStateVariableDeclaration.reset();
-        }*/
     }
 
     private printSelectorElements(): void {

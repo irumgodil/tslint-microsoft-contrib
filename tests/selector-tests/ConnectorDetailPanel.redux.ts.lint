@@ -1,4 +1,14 @@
 
+// selectors
+export function getNavDiv(state: AppState): ListPivotType {
+  return state ? state.getIn(['microsoftSearch', 'microsoftSearchReducer', 'navDivReducer']) : undefined
+}
+
+export function getIsItemSelected(state: AppState): boolean {
+  return state.getIn(['microsoftSearch', 'microsoftSearchReducer', 'isItemSelectedReducer'])
+}
+
+
 export const wizardSelector = (state: AppState) => {
   return state.getIn(['microsoftSearch', 'connectorList', 'addConnectorWizard'])
 }

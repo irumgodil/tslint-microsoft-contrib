@@ -7,4 +7,10 @@ import * as ts from 'typescript';
 // X in this case is an Identifier object, hence this class stores collections of ts.Node objects.
 export abstract class ASelectorElement {
     public abstract print(): void;
+
+    protected varName: string = '';
+
+    public getName(): string {
+        return this.varName;
+    }
 }

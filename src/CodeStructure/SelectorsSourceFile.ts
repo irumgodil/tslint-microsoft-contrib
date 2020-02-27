@@ -1,37 +1,37 @@
 import * as ts from 'typescript';
 
-import { CreateSelectorElement } from './SelectorComponents/CreateSelectorElement';
+import { CreateSelectorSingleElement } from './SelectorComponents/CreateSelectorSingleElement';
 import { StateSelectorElement } from './SelectorComponents/StateSelectorElement';
 
 export class SelectorsSourceFile {
     // The source file.
     private readonly stateSourceFile: ts.SourceFile;
 
-    private readonly createSelectorElements: CreateSelectorElement[] = [];
+    private readonly createSelectorElements: CreateSelectorSingleElement[] = [];
 
     private readonly stateSelectorElements: Map<string, StateSelectorElement> = new Map<string, StateSelectorElement>();
 
-    private currentCreateSelectorElement: CreateSelectorElement | undefined;
+    private currentCreateSelectorElement: CreateSelectorSingleElement | undefined;
 
     constructor(sourceFile: ts.SourceFile) {
         this.stateSourceFile = sourceFile;
     }
 
-    public addCreateSelectorsNode(node: ts.VariableDeclaration, callExpression: ts.CallExpression) {
-        this.currentCreateSelectorElement = new CreateSelectorElement(node, callExpression);
+    public addCreateSelectorsNode(node: ts.VariableDeclaration, createSelector: ts.CallExpression, getCall: ts.CallExpression) {
+        this.currentCreateSelectorElement = new CreateSelectorSingleElement(node, createSelector, getCall);
         this.createSelectorElements.push(this.currentCreateSelectorElement);
 
         this.locatePrecedentSelector();
     }
 
     // These represent state.getIn cases, that do not have createSelector in them.
-    public addStateSelectorsNode(node: ts.VariableDeclaration) {
-        this.stateSelectorElements.set(node.name.getFullText().trim(), new StateSelectorElement(node));
+    public addStateSelectorsNode(node: ts.VariableDeclaration, callExpression: ts.CallExpression) {
+        this.stateSelectorElements.set(node.name.getFullText().trim(), new StateSelectorElement(node, callExpression));
     }
 
     private locatePrecedentSelector() {
         if (this.currentCreateSelectorElement) {
-            const callExpression = this.currentCreateSelectorElement.getCallExpression();
+            const callExpression = this.currentCreateSelectorElement.getCreateSelectorExpression();
 
             // Get arguments for the call expression.
             const createSelectorArgs = callExpression.arguments;
@@ -63,24 +63,38 @@ export class SelectorsSourceFile {
     public print() {
         console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
 
+        if (this.stateSelectorElements.size > 0) {
+            console.log('<table>');
+            console.log('<tr />');
+            console.log('<tr><b>State Selectors</b></tr>');
+            console.log('<tr>');
+            console.log('<td><b>Selector name</b></td>');
+
+            console.log('<td><b>App State Var</b></td>');
+            console.log('<td><b>Parameters</b></td>');
+
+            console.log('</tr>');
+            this.stateSelectorElements.forEach(stateSelectorElement => {
+                stateSelectorElement.print();
+            });
+
+            console.log('</table>');
+        }
         if (this.createSelectorElements.length > 0) {
             console.log('<table>');
 
+            console.log('<tr><b>CreateSelectors</b></tr>');
             console.log('<tr>');
-            console.log('<td><b>Selectors</b></td>');
-            console.log('<td><b>Initial Value</b></td>');
-            console.log('<td><b>Actions</b></td>');
+            console.log('<td><b>Selector name</b></td>');
+            console.log('<td><b>Preceding Selector Name</b></td>');
+            console.log('<td><b>Variable from Preceding selector</b></td>');
 
-            console.log('<td><b>Tests</b></td>');
+            console.log('</tr>');
 
             this.createSelectorElements.forEach(createSelectorElement => {
                 createSelectorElement.print();
             });
-            console.log('<td><b>Tests</b></td>');
-
-            this.stateSelectorElements.forEach(stateSelectorElement => {
-                stateSelectorElement.print();
-            });
+            console.log('<tr />');
             console.log('</table>');
         } else {
             console.log('<h3>No data found</h2>');

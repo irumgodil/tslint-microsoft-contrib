@@ -1,36 +1,30 @@
 import * as ts from 'typescript';
 import { ASelectorElement } from './ASelectorElement';
-import { debug } from 'util';
 
 export class StateSelectorElement extends ASelectorElement {
     // This is the full variable declaration, see definition of 'selectedStepId' above
     private overallDeclaration: ts.VariableDeclaration;
 
+    // The call expression for this case: state.getIn(...)
+    private callExpression: ts.CallExpression;
+
     // This is true, if the enclosing parameter is app-state level.
-    private isAppStateBased: boolean;
+    private isAppStateBased: boolean = false;
 
-    private appStateVariableName: string;
+    private appStateVariableName: string = '';
 
-    /**
-     * The State variable name.
-     */
-    private varName: string = '';
+    // the list of values being modified as a result of this state variable. e.g. in case of:
+    // return state.getIn(['microsoftSearch', 'connectorList', 'isAddConnectorWizardOpened']), it is the 3 strings
+    // 'microsoftSearch', 'connectorList', 'isAddConnectorWizardOpened' in this order only.
+    private varList: string[] = [];
 
-    /***
-     * Initialized value of this state variable
-     * Logic:
-     * > Pull out the initializer part of the Variable Declaration and checks its arguments.
-     * > Takes the first argument of the initializer as the initialization value.
-     */
-    private initializedValue: string = '';
-
-    constructor(createStateVar: ts.VariableDeclaration) {
+    constructor(createStateVar: ts.VariableDeclaration, callExpression: ts.CallExpression) {
         super();
         this.overallDeclaration = createStateVar;
+        this.callExpression = callExpression;
 
         // Set the name of the state variable.
         this.setName();
-
         this.process();
     }
 
@@ -72,27 +66,21 @@ export class StateSelectorElement extends ASelectorElement {
                         .indexOf('appstate') !== -1
                 ) {
                     this.isAppStateBased = true;
-
                     this.appStateVariableName = parameter.name.getFullText();
                 }
             }
         }
 
-        // Uses the right hand side of the Variable declaration as the initializer.
-        /* const initializer: ts.CallExpression = this.overallDeclaration.initializer as ts.CallExpression;
-
-        if (initializer) {
-            const args = initializer.arguments;
-
-            const objectInitializer: ts.ObjectLiteralExpression = args[1] as ts.ObjectLiteralExpression;
-            //  console.log("Initializer Type arguments: " + objectInitializer._leftHandSideExpressionBrand);
-            if (args) {
-                this.initializedValue = args[0].getFullText();
-                args.forEach(arg => {
-                    //       console.log("Initializer Type arguments222: " + arg);
+        // Populate the call expression arguments.
+        this.callExpression.arguments.forEach((node: ts.Expression) => {
+            // To-do: What happens if expression is not an array literal.
+            if (ts.isArrayLiteralExpression(node)) {
+                (node as ts.ArrayLiteralExpression).forEachChild((child: ts.Node) => {
+                    // To-do: What happens if expression is not a string.
+                    this.varList.push(child.getFullText());
                 });
             }
-        }*/
+        });
     }
 
     /**
@@ -103,9 +91,14 @@ export class StateSelectorElement extends ASelectorElement {
         console.log('<td><b>' + this.varName + '</b></td>');
         console.log('<td>');
 
-        console.log('<td><b>isAppStateBased: ' + this.isAppStateBased + ' appStateVarName: ' + this.appStateVariableName + '</b></td>');
+        console.log('<td><b>' + this.isAppStateBased + ' appStateVarName: ' + this.appStateVariableName + '</b></td>');
 
-        //  this.printTests();
+        console.log('<td>');
+
+        this.varList.forEach((node: string) => {
+            console.log(node + ': {');
+        });
+
         console.log('</td></tr>');
     }
 }

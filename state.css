@@ -1,0 +1,32 @@
+﻿body {
+background-color: rgb(245, 235, 238) }
+
+
+h1 {
+  color: blue;
+ 
+}
+
+p {
+  font-family: verdana;
+  font-size: 20px;
+}
+
+td {
+border: solid 1px;
+}
+.testcase {
+background: red;
+ 
+}
+
+.source {
+background: red;
+}
+
+stateIdentifier {
+background: red;
+}
+
+table {background: rgb(153, 204, 255)
+}
