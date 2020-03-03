@@ -1,6 +1,8 @@
 import * as ts from 'typescript';
 import { ASelectorElement } from './ASelectorElement';
 
+import { StateSelectorVarList } from './StateSelectorVarList';
+
 export class StateSelectorElement extends ASelectorElement {
     // This is the full variable declaration, see definition of 'selectedStepId' above
     private overallDeclaration: ts.VariableDeclaration;
@@ -16,7 +18,7 @@ export class StateSelectorElement extends ASelectorElement {
     // the list of values being modified as a result of this state variable. e.g. in case of:
     // return state.getIn(['microsoftSearch', 'connectorList', 'isAddConnectorWizardOpened']), it is the 3 strings
     // 'microsoftSearch', 'connectorList', 'isAddConnectorWizardOpened' in this order only.
-    private varList: string[] = [];
+    private varList: StateSelectorVarList = new StateSelectorVarList();
 
     constructor(createStateVar: ts.VariableDeclaration, callExpression: ts.CallExpression) {
         super();
@@ -71,16 +73,7 @@ export class StateSelectorElement extends ASelectorElement {
             }
         }
 
-        // Populate the call expression arguments.
-        this.callExpression.arguments.forEach((node: ts.Expression) => {
-            // To-do: What happens if expression is not an array literal.
-            if (ts.isArrayLiteralExpression(node)) {
-                (node as ts.ArrayLiteralExpression).forEachChild((child: ts.Node) => {
-                    // To-do: What happens if expression is not a string.
-                    this.varList.push(child.getFullText());
-                });
-            }
-        });
+        this.varList.addVarList(this.callExpression.arguments);
     }
 
     /**
@@ -94,11 +87,42 @@ export class StateSelectorElement extends ASelectorElement {
         console.log('<td><b>' + this.isAppStateBased + ' appStateVarName: ' + this.appStateVariableName + '</b></td>');
 
         console.log('<td>');
+        this.varList.print();
+        console.log('</td>');
 
-        this.varList.forEach((node: string) => {
-            console.log(node + ': {');
-        });
+        this.printTests();
 
         console.log('</td></tr>');
+    }
+
+    private printTests(): void {
+        console.log('<td>');
+
+        const describeString = "describe('Selectors for " + this.varName + ' : ' + "', () => {";
+        const itString = "it('Test retrieving values for " + this.varName + ' : ' + "', () => {";
+
+        const endTag = '});';
+
+        const appState = 'const appState = fromJS({';
+        console.log('<div>');
+
+        console.log(describeString);
+        console.log('</div><div>');
+
+        console.log(itString);
+        console.log('</div><div>');
+        console.log(appState);
+        console.log('</div>');
+
+        this.varList.printTests();
+
+        console.log('<div>');
+
+        console.log(endTag);
+        console.log('</div><div>');
+        console.log(endTag);
+        console.log('</div>');
+
+        console.log('</td>');
     }
 }

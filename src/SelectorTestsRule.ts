@@ -4,6 +4,7 @@ import * as Lint from 'tslint';
 import { ExtendedMetadata } from './utils/ExtendedMetadata';
 import { SelectorsSourceFile } from './CodeStructure/SelectorsSourceFile';
 import { ProcessingSelectorDeclarationStatus } from './StateActionProcessor/ProcessingSelectorDeclarationStatus';
+import { CreateSelectorWithAppState } from './CodeStructure/SelectorComponents/CreateSelectorWithAppState';
 
 export class Rule extends Lint.Rules.AbstractRule {
     public static metadata: ExtendedMetadata = {
@@ -33,7 +34,7 @@ class RulesWalker extends Lint.RuleWalker {
     private currentSelectorSourceFile: SelectorsSourceFile | undefined;
 
     // State machine for processing the variable declaration/call expression statements - to track which part of the statement we are processing
-    private processingSelectorDeclarationStatus = new ProcessingSelectorDeclarationStatus();
+    private currentProcess = new ProcessingSelectorDeclarationStatus();
 
     // Action Source File collection
     // tslint:disable-next-line: prefer-readonly
@@ -56,8 +57,8 @@ class RulesWalker extends Lint.RuleWalker {
         }
 
         //   if (sourceFileName.indexOf('C:/Users/igodil.REDMOND/Source/Repos/M365AdminUX/src/microsoft-search/connectors/') !== -1) {
-        //  if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
-        if (true) {
+        if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
+            // if (true) {
             this.printSelectors = true;
         } else {
             this.printSelectors = false;
@@ -78,46 +79,58 @@ class RulesWalker extends Lint.RuleWalker {
      */
     protected visitVariableDeclaration(node: ts.VariableDeclaration): void {
         // Keep track of this variable as we might need it later.
-        this.processingSelectorDeclarationStatus.currentVariableBeingProcessed = node;
+        this.currentProcess.currentVariableBeingProcessed = node;
         super.visitVariableDeclaration(node);
 
-        this.processingSelectorDeclarationStatus.reset();
+        this.currentProcess.reset();
     }
 
     /***
      * Call Expressions are calls to methods, so in case of call expressions that start with 'createStateField', we know there is a state variable in process
      */
     protected visitCallExpression(node: ts.CallExpression): void {
-        if (this.processingSelectorDeclarationStatus.currentVariableBeingProcessed) {
+        if (!this.currentSelectorSourceFile) {
+            super.visitCallExpression(node);
+            return;
+        }
+        if (this.currentProcess.currentVariableBeingProcessed) {
             // If the call is to 'createSelector', parse out the variable declaration
             if (node.expression.getText() === 'createSelector') {
-                if (this.currentSelectorSourceFile) {
-                    // To-do - where else to set this to false.
-                    this.processingSelectorDeclarationStatus.processingCreateSelectorOn = true;
-                    this.processingSelectorDeclarationStatus.createSelectorExpression = node;
+                // To-do - where else to set this to false.
+                this.currentProcess.processingCreateSelectorOn = true;
+                this.currentProcess.createSelectorExpression = node;
+            }
+            if (this.currentProcess.processingCreateSelectorOn) {
+                //TO-do this is still not baked as we are assuming the first call for getIn is the one.
+                // TO-Do -
+                if (node.expression.getText() === 'state.getIn') {
+                    this.currentSelectorSourceFile.addCreateSelectorsWithAppStateNode(
+                        new CreateSelectorWithAppState(
+                            this.currentProcess.currentVariableBeingProcessed as ts.VariableDeclaration,
+                            this.currentProcess.createSelectorExpression as ts.CallExpression,
+                            node.arguments
+                        )
+                    );
+                    this.currentProcess.processingCreateSelectorOn = false;
+                } else if (node.expression.getText().indexOf('get') !== -1) {
+                    // We only parse this if this is a return statement, as other usages of this call could occcur at other points in the code.
+
+                    // This is the full Variable Declaration for the createSelector call
+                    this.currentSelectorSourceFile.addCreateSelectorsNode(
+                        this.currentProcess.currentVariableBeingProcessed as ts.VariableDeclaration,
+                        this.currentProcess.createSelectorExpression as ts.CallExpression,
+                        node
+                    );
+
+                    this.currentProcess.processingCreateSelectorOn = false;
                 }
             } else if (node.expression.getText() === 'state.getIn' && node.parent.kind === ts.SyntaxKind.ReturnStatement) {
                 // We only parse this if this is a return statement, as other usages of this call could occcur at other points in the code.
-
-                if (this.currentSelectorSourceFile) {
-                    // This is the full Variable Declaration for the createSelector call
-                    this.currentSelectorSourceFile.addStateSelectorsNode(
-                        this.processingSelectorDeclarationStatus.currentVariableBeingProcessed as ts.VariableDeclaration,
-                        node
-                    );
-                }
-            } else if (node.expression.getText().indexOf('get') !== -1) {
-                // We only parse this if this is a return statement, as other usages of this call could occcur at other points in the code.
-                if (this.processingSelectorDeclarationStatus.processingCreateSelectorOn && this.currentSelectorSourceFile) {
-                    // This is the full Variable Declaration for the createSelector call
-                    this.currentSelectorSourceFile.addCreateSelectorsNode(
-                        this.processingSelectorDeclarationStatus.currentVariableBeingProcessed as ts.VariableDeclaration,
-                        this.processingSelectorDeclarationStatus.createSelectorExpression as ts.CallExpression,
-                        node
-                    );
-                }
-
-                this.processingSelectorDeclarationStatus.processingCreateSelectorOn = false;
+                // This is the full Variable Declaration for the createSelector call
+                this.currentSelectorSourceFile.addStateSelectorsNode(
+                    this.currentProcess.currentVariableBeingProcessed as ts.VariableDeclaration,
+                    node
+                );
             }
         }
         super.visitCallExpression(node);

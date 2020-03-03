@@ -1,11 +1,15 @@
 import * as ts from 'typescript';
 
 import { CreateSelectorSingleElement } from './SelectorComponents/CreateSelectorSingleElement';
+import { CreateSelectorWithAppState } from './SelectorComponents/CreateSelectorWithAppState';
+
 import { StateSelectorElement } from './SelectorComponents/StateSelectorElement';
 
 export class SelectorsSourceFile {
     // The source file.
     private readonly stateSourceFile: ts.SourceFile;
+
+    private readonly createSelectorWithAppStates: CreateSelectorWithAppState[] = [];
 
     private readonly createSelectorElements: CreateSelectorSingleElement[] = [];
 
@@ -15,6 +19,10 @@ export class SelectorsSourceFile {
 
     constructor(sourceFile: ts.SourceFile) {
         this.stateSourceFile = sourceFile;
+    }
+
+    public addCreateSelectorsWithAppStateNode(selector: CreateSelectorWithAppState) {
+        this.createSelectorWithAppStates.push(selector);
     }
 
     public addCreateSelectorsNode(node: ts.VariableDeclaration, createSelector: ts.CallExpression, getCall: ts.CallExpression) {
@@ -62,6 +70,24 @@ export class SelectorsSourceFile {
 
     public print() {
         console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
+
+        if (this.createSelectorWithAppStates.length > 0) {
+            console.log('<table>');
+            console.log('<tr />');
+            console.log('<tr><b>CreateState Selectors With AppState</b></tr>');
+            console.log('<tr>');
+            console.log('<td><b>Selector name</b></td>');
+
+            console.log('<td><b>App State Vars</b></td>');
+            console.log('<td><b>Parameters</b></td>');
+
+            console.log('</tr>');
+            this.createSelectorWithAppStates.forEach(stateSelectorElement => {
+                stateSelectorElement.print();
+            });
+
+            console.log('</table>');
+        }
 
         if (this.stateSelectorElements.size > 0) {
             console.log('<table>');
