@@ -17,7 +17,7 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
     )
     // TODO: As part of this code, for now we are only working on a single kind of varlist.
     */
-    private stateselectorVarList: StateSelectorVarList = new StateSelectorVarList();
+    public stateselectorVarList: StateSelectorVarList = new StateSelectorVarList();
 
     // This is the string value being set, so in wizard!.get('wizardComplete'), it is 'wizardComplete'
     private readonly valueString: string = '';
@@ -32,6 +32,10 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         // Set the name of the state variable.
         this.setName();
         this.stateselectorVarList.addVarList(varArgs);
+    }
+
+    public addVarToStateList(arg: string): void {
+        this.stateselectorVarList.addVar(arg);
     }
 
     public getCreateSelectorExpression(): ts.CallExpression {
@@ -65,7 +69,7 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         console.log('</tr>');
     }
 
-    private printTests(): void {
+    public printTests(): void {
         console.log('<td>');
 
         const describeString = "describe('Selectors for " + this.varName + "', () => {";
@@ -79,21 +83,16 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         const result = 'const result = ' + this.varName + '(appState)';
         const expectedStmt = 'expect(result).toEqual(' + expectedValueFill + ')';
 
-        const appState = 'const appState = fromJS({';
         console.log('<div>');
 
         console.log(describeString);
         console.log('</div><div>');
 
         console.log(itString);
-        console.log('</div><div>');
-
-        console.log(appState);
         console.log('</div>');
 
-        this.stateselectorVarList.printTests();
+        this.printAppState();
 
-        console.log('})');
         console.log('<div>');
         console.log(result);
         console.log('</div><div>');
@@ -106,5 +105,20 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         console.log('</div>');
 
         console.log('</td>');
+    }
+
+    public printAppState(): void {
+        const endTag = '});';
+        const appState = 'const appState = fromJS({';
+
+        console.log('<div>');
+        console.log(appState);
+        console.log('</div>');
+
+        this.stateselectorVarList.printTests();
+
+        console.log('<div>');
+        console.log(endTag);
+        console.log('</div>');
     }
 }

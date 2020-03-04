@@ -26,4 +26,11 @@ export class CreateSelectorElementType extends ASelectorElement {
      * This is the table that is printed in the main html for test cases.
      */
     public print(): void {}
+
+    /**
+     * This is the table that is printed in the main html for test cases.
+     */
+    public printTests(): void {}
+
+    public printAppState(): void {}
 }

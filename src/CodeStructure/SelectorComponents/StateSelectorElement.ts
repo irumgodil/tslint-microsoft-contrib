@@ -30,6 +30,10 @@ export class StateSelectorElement extends ASelectorElement {
         this.process();
     }
 
+    public addVarToStateList(arg: string): void {
+        this.varList.addVar(arg);
+    }
+
     /**
      * Sets the state variable name.
      */
@@ -95,34 +99,22 @@ export class StateSelectorElement extends ASelectorElement {
         console.log('</td></tr>');
     }
 
-    private printTests(): void {
-        console.log('<td>');
+    public printTests(): void {
+        // There should be no tests here.
+    }
 
-        const describeString = "describe('Selectors for " + this.varName + ' : ' + "', () => {";
-        const itString = "it('Test retrieving values for " + this.varName + ' : ' + "', () => {";
-
+    public printAppState(): void {
         const endTag = '});';
-
         const appState = 'const appState = fromJS({';
+
         console.log('<div>');
-
-        console.log(describeString);
-        console.log('</div><div>');
-
-        console.log(itString);
-        console.log('</div><div>');
         console.log(appState);
         console.log('</div>');
 
         this.varList.printTests();
 
         console.log('<div>');
-
-        console.log(endTag);
-        console.log('</div><div>');
         console.log(endTag);
         console.log('</div>');
-
-        console.log('</td>');
     }
 }

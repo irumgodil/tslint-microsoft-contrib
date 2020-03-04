@@ -9,7 +9,7 @@ export class SelectorsSourceFile {
     // The source file.
     private readonly stateSourceFile: ts.SourceFile;
 
-    private readonly createSelectorWithAppStates: CreateSelectorWithAppState[] = [];
+    private readonly createSelectorWithAppStates: Map<string, CreateSelectorWithAppState> = new Map<string, CreateSelectorWithAppState>();
 
     private readonly createSelectorElements: CreateSelectorSingleElement[] = [];
 
@@ -22,7 +22,7 @@ export class SelectorsSourceFile {
     }
 
     public addCreateSelectorsWithAppStateNode(selector: CreateSelectorWithAppState) {
-        this.createSelectorWithAppStates.push(selector);
+        this.createSelectorWithAppStates.set(selector.getName(), selector);
     }
 
     public addCreateSelectorsNode(node: ts.VariableDeclaration, createSelector: ts.CallExpression, getCall: ts.CallExpression) {
@@ -57,9 +57,15 @@ export class SelectorsSourceFile {
                             const firstArgName = firstArrayElement.getFullText();
 
                             // if there is a state selector found for this type, tie it with this selector.
+                            // To-do: clean this code
                             const stateSelector = this.stateSelectorElements.get(firstArgName);
                             if (stateSelector) {
                                 this.currentCreateSelectorElement.setPrecedingSelector(stateSelector);
+                            } else {
+                                const createAppStateSelector = this.createSelectorWithAppStates.get(firstArgName);
+                                if (createAppStateSelector) {
+                                    this.currentCreateSelectorElement.setPrecedingSelector(createAppStateSelector);
+                                }
                             }
                         }
                     }

@@ -68,7 +68,48 @@ export class CreateSelectorSingleElement extends CreateSelectorElementType {
             console.log('</td>');
         }
 
-        //  this.printTests();
+        this.printTests();
         console.log('</tr>');
+    }
+
+    public printTests(): void {
+        console.log('<td>');
+
+        const describeString = "describe('Selectors for " + this.varName + "', () => {";
+        const itString = "it('Test retrieving values for " + this.varName + "', () => {";
+
+        const endTag = '})';
+
+        const expectedValueFill = 'FilloutExpectedValue';
+        const result = 'const result = ' + this.varName + '(appState)';
+        const expectedStmt = 'expect(result).toEqual(' + expectedValueFill + ')';
+
+        console.log('<div>');
+
+        console.log(describeString);
+        console.log('</div><div>');
+
+        console.log(itString);
+        console.log('</div>');
+
+        // To-do: only works for a single arg, but what about other cases?
+        if (this.getCall && this.getCall.arguments && this.getCall.arguments.length === 1) {
+            this.precedingSelectorElement.addVarToStateList(this.getCall.arguments[0].getFullText());
+        }
+
+        this.precedingSelectorElement.printAppState();
+
+        console.log('<div>');
+        console.log(result);
+        console.log('</div><div>');
+        console.log(expectedStmt);
+        console.log('</div><div>');
+
+        console.log(endTag);
+        console.log('</div><div>');
+        console.log(endTag);
+        console.log('</div>');
+
+        console.log('</td>');
     }
 }

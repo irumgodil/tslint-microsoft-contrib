@@ -27,6 +27,10 @@ export class StateSelectorVarList {
         });
     }
 
+    public addVar(arg: string): void {
+        this.varList.push(arg);
+    }
+
     /**
      * This is the table that is printed in the main html for test cases.
      */
