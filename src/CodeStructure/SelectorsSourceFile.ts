@@ -77,7 +77,7 @@ export class SelectorsSourceFile {
     public print() {
         console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
 
-        if (this.createSelectorWithAppStates.length > 0) {
+        if (this.createSelectorWithAppStates.size > 0) {
             console.log('<table>');
             console.log('<tr />');
             console.log('<tr><b>CreateState Selectors With AppState</b></tr>');

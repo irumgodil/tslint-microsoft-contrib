@@ -56,25 +56,30 @@ export class CreateSelectorSingleElement extends CreateSelectorElementType {
         console.log('<tr>');
         console.log('<td><b>' + this.varName + '</b></td>');
 
+        console.log('<td>');
         if (this.precedingSelectorElement) {
-            console.log('<td>' + this.precedingSelectorElement.getName());
-            console.log('</td>');
+            console.log(this.precedingSelectorElement.getName());
         }
+        console.log('</td>');
 
+        console.log('<td>');
         // To-do: only works for a single arg, but what about other cases?
         if (this.getCall && this.getCall.arguments && this.getCall.arguments.length === 1) {
-            console.log('<td>' + this.getCall.arguments[0].getFullText());
-
-            console.log('</td>');
+            console.log(this.getCall.arguments[0].getFullText());
         }
 
-        this.printTests();
+        console.log('</td>');
+
+        console.log('<td>');
+        if (this.precedingSelectorElement && this.getCall && this.getCall.arguments && this.getCall.arguments.length === 1) {
+            this.printTests();
+        }
+        console.log('</td>');
+
         console.log('</tr>');
     }
 
     public printTests(): void {
-        console.log('<td>');
-
         const describeString = "describe('Selectors for " + this.varName + "', () => {";
         const itString = "it('Test retrieving values for " + this.varName + "', () => {";
 
@@ -93,11 +98,10 @@ export class CreateSelectorSingleElement extends CreateSelectorElementType {
         console.log('</div>');
 
         // To-do: only works for a single arg, but what about other cases?
-        if (this.getCall && this.getCall.arguments && this.getCall.arguments.length === 1) {
+        if (this.precedingSelectorElement && this.getCall && this.getCall.arguments && this.getCall.arguments.length === 1) {
             this.precedingSelectorElement.addVarToStateList(this.getCall.arguments[0].getFullText());
+            this.precedingSelectorElement.printAppState();
         }
-
-        this.precedingSelectorElement.printAppState();
 
         console.log('<div>');
         console.log(result);
@@ -109,7 +113,5 @@ export class CreateSelectorSingleElement extends CreateSelectorElementType {
         console.log('</div><div>');
         console.log(endTag);
         console.log('</div>');
-
-        console.log('</td>');
     }
 }

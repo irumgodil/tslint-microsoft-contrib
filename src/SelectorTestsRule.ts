@@ -57,8 +57,8 @@ class RulesWalker extends Lint.RuleWalker {
         }
 
         //   if (sourceFileName.indexOf('C:/Users/igodil.REDMOND/Source/Repos/M365AdminUX/src/microsoft-search/connectors/') !== -1) {
-        //  if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
-        if (true) {
+        if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
+            //if (true) {
             this.printSelectors = true;
         } else {
             this.printSelectors = false;
