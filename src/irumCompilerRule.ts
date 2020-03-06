@@ -69,8 +69,8 @@ class RulesWalker extends Lint.RuleWalker {
             this.actionSourceFileCollection.set(sourceFileName, this.currentActionSourceFile);
         }
 
-        //   if (sourceFileName.indexOf('C:/Users/igodil.REDMOND/Source/Repos/M365AdminUX/src/microsoft-search/connectors/') !== -1) {
-        if (sourceFileName.indexOf('redux') !== -1) {
+        if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors/') !== -1) {
+            //if (sourceFileName.indexOf('redux') !== -1) {
             this.printActionData = true;
         } else {
             this.printActionData = false;

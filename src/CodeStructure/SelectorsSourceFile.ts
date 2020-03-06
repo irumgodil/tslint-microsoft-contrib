@@ -78,7 +78,7 @@ export class SelectorsSourceFile {
         console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
 
         if (this.createSelectorWithAppStates.size > 0) {
-            console.log('<table>');
+            console.log("<table class='selector'>");
             console.log('<tr />');
             console.log('<tr><b>CreateState Selectors With AppState</b></tr>');
             console.log('<tr>');
@@ -96,7 +96,7 @@ export class SelectorsSourceFile {
         }
 
         if (this.stateSelectorElements.size > 0) {
-            console.log('<table>');
+            console.log("<table class='selector'>");
             console.log('<tr />');
             console.log('<tr><b>State Selectors</b></tr>');
             console.log('<tr>');
@@ -113,7 +113,7 @@ export class SelectorsSourceFile {
             console.log('</table>');
         }
         if (this.createSelectorElements.length > 0) {
-            console.log('<table>');
+            console.log("<table class='selector'>");
 
             console.log('<tr><b>CreateSelectors</b></tr>');
             console.log('<tr>');
