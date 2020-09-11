@@ -72,7 +72,7 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
     public printTests(): void {
         console.log('<td>');
 
-        const describeString = "describe('Selectors for " + this.varName + "', () => {";
+        const describeString = "describe('IRUM Selectors val " + this.varName + "', () => {";
         const itString = "it('Test retrieving values for " + this.varName + "', () => {";
 
         const endTag = '})';

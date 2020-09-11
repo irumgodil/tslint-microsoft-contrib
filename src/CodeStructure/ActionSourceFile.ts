@@ -63,26 +63,28 @@ export class ActionSourceFile {
 
     // Prints the State-> Action data in this source file.
     public print() {
-        console.log('<h1>Action Data in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
-        this.createStateIdentifiers.print();
-        this.createActionTypes.print();
-
         if (this.actionStateVariables.length > 0) {
-            console.log('<table>');
+            console.log('<h1>Action Data in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
+            this.createStateIdentifiers.print();
+            this.createActionTypes.print();
 
-            console.log('<tr>');
-            console.log('<td><b>State Variable</b></td>');
-            console.log('<td><b>Initial Value</b></td>');
-            console.log('<td><b>Actions</b></td>');
+            if (this.actionStateVariables.length > 0) {
+                console.log('<table>');
 
-            console.log('<td><b>Tests</b></td>');
+                console.log('<tr>');
+                console.log('<td><b>State Variable</b></td>');
+                console.log('<td><b>Initial Value</b></td>');
+                console.log('<td><b>Actions</b></td>');
 
-            this.actionStateVariables.forEach(actionStateVariable => {
-                actionStateVariable.print();
-            });
-            console.log('</table>');
-        } else {
-            console.log('<h3>No data found</h2>');
+                console.log('<td><b>Tests</b></td>');
+
+                this.actionStateVariables.forEach(actionStateVariable => {
+                    actionStateVariable.print();
+                });
+                console.log('</table>');
+            } else {
+                console.log('<h3>No data found</h2>');
+            }
         }
     }
 

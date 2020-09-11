@@ -1,20 +1,6 @@
 
-/**Selectors*/
-export const udtStatesSelector = (state: AppState) => {
-  return state.getIn(['microsoftSearch', 'udtStates'])
-}
 
-export const udtApiShowSpinnerSelector = createSelector([udtStatesSelector], (udtStates: UDTStates) =>
-  udtStates!.get('udtApiShowSpinner')
-)
-
-export const selectedDatasetSelector = createSelector(
-  (state: AppState) => state.getIn(['microsoftSearch', 'connectorList', 'selectedDataSet']),
-  (selectedDataSet: IImmutableMap<DatasetDetail>) => selectedDataSet
-)
-
-
-export const selectedDatasetEditState = createSelector(
-  [selectedDatasetSelector],
-  (selectedDataSet: IImmutableMap<DatasetDetail>) => selectedDataSet!.get('datasetEditState')
+export const isFetchingItemsSelector = createSelector(
+  (state: AppState) => state.getIn(['microsoftSearch', 'connectorList', 'isFetchingItems']),
+  (isFetching: boolean) => isFetching
 )

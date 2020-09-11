@@ -75,9 +75,9 @@ export class SelectorsSourceFile {
     }
 
     public print() {
-        console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
-
         if (this.createSelectorWithAppStates.size > 0) {
+            console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
+
             console.log("<table class='selector'>");
             console.log('<tr />');
             console.log('<tr><b>CreateState Selectors With AppState</b></tr>');
@@ -96,6 +96,8 @@ export class SelectorsSourceFile {
         }
 
         if (this.stateSelectorElements.size > 0) {
+            console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
+
             console.log("<table class='selector'>");
             console.log('<tr />');
             console.log('<tr><b>State Selectors</b></tr>');
@@ -113,6 +115,8 @@ export class SelectorsSourceFile {
             console.log('</table>');
         }
         if (this.createSelectorElements.length > 0) {
+            console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
+
             console.log("<table class='selector'>");
 
             console.log('<tr><b>CreateSelectors</b></tr>');
@@ -128,8 +132,6 @@ export class SelectorsSourceFile {
             });
             console.log('<tr />');
             console.log('</table>');
-        } else {
-            console.log('<h3>No data found</h2>');
         }
     }
 }

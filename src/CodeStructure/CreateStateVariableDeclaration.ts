@@ -120,25 +120,29 @@ export class CreateStateVariableDeclaration {
             const actualState = 'const actualState =  ' + this.varName + '(originalState, testAction);';
             const test = 'expect(actualState).toEqual(expectedState);';
 
-            console.log('<div>');
+            console.log("<div class='indent'>");
 
             console.log(describeString);
-            console.log('</div><div>');
+            console.log("</div><div class='indent'>");
 
             console.log(itString);
-            console.log('</div><div>');
+            console.log("</div><div class='indent'>");
             console.log(originalState);
-            console.log('</div><div>');
+            console.log("</div><div class='indent'>");
+
             console.log(expectedState);
-            console.log('</div><div>');
+            console.log("</div><div class='indent'>");
             console.log(testAction);
-            console.log('</div><div>');
+            console.log("</div><div class='indent'>");
             console.log(actualState);
-            console.log('</div><div>');
+            console.log("</div><div class='indent'>");
+
             console.log(test);
-            console.log('</div><div>');
+            console.log("</div><div class='indent'>");
+
             console.log(endTag);
-            console.log('</div><div>');
+            console.log("</div><div class='indent'>");
+
             console.log(endTag);
             console.log('</div>');
         });

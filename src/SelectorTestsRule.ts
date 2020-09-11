@@ -56,9 +56,8 @@ class RulesWalker extends Lint.RuleWalker {
             this.selectorSourceFileCollection.set(sourceFileName, this.currentSelectorSourceFile);
         }
 
-        //   if (sourceFileName.indexOf('C:/Users/igodil.REDMOND/Source/Repos/M365AdminUX/src/microsoft-search/connectors/') !== -1) {
-        if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
-            //if (true) {
+        //if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
+        if (true) {
             this.printSelectors = true;
         } else {
             this.printSelectors = false;
@@ -97,8 +96,26 @@ class RulesWalker extends Lint.RuleWalker {
             // If the call is to 'createSelector', parse out the variable declaration
             if (node.expression.getText() === 'createSelector') {
                 // To-do - where else to set this to false.
-                this.currentProcess.processingCreateSelectorOn = true;
-                this.currentProcess.createSelectorExpression = node;
+
+                // To-do at this tpoint only talking about 1 arg.
+
+                if (node.arguments.length > 0) {
+                    const firstArg = node.arguments[0];
+
+                    if (firstArg.kind === ts.SyntaxKind.ArrowFunction) {
+                        this.currentProcess.processingCreateSelectorOn = true;
+                        this.currentProcess.createSelectorExpression = node;
+                    } else if (firstArg.kind === ts.SyntaxKind.ArrayLiteralExpression) {
+                        // tslint:disable-next-line: prefer-type-cast
+                        const arrayElements = (firstArg as ts.ArrayLiteralExpression).elements;
+
+                        // <ToDo> Currently, we are only supporting a single element.
+                        if (arrayElements.length === 1) {
+                            this.currentProcess.processingCreateSelectorOn = true;
+                            this.currentProcess.createSelectorExpression = node;
+                        }
+                    }
+                }
             }
             if (this.currentProcess.processingCreateSelectorOn) {
                 //TO-do this is still not baked as we are assuming the first call for getIn is the one.
