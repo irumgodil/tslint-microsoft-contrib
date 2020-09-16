@@ -1,4 +1,6 @@
 import * as ts from 'typescript';
+import { ActionDefinition } from './ActionDefinition';
+import { ActionDefinitionCollection } from './Collections/ActionDefinitionCollection';
 
 // Example Statement:
 /*e
@@ -115,33 +117,38 @@ export class CreateStateVariableDeclaration {
             const itString = "it('should set the value for " + this.varName + ' using action: ' + key + "', () => {";
 
             const endTag = '});';
-            const testAction = 'const testAction = {' + 'type: ' + key + ',' + 'payload: expectedState};';
+            let testAction = 'const testAction = {' + 'type: ' + key + ',' + 'payload: expectedState};';
+
+            const actionDefinition = ActionDefinitionCollection.actionDefinitions.get(key);
+            if (actionDefinition) {
+                testAction = 'const testAction = ' + actionDefinition.getActionDataForTest();
+            }
 
             const actualState = 'const actualState =  ' + this.varName + '(originalState, testAction);';
             const test = 'expect(actualState).toEqual(expectedState);';
 
-            console.log("<div class='indent'>");
+            console.log('<div class="indent">');
 
             console.log(describeString);
-            console.log("</div><div class='indent'>");
+            console.log('</div><div class="indent">');
 
             console.log(itString);
-            console.log("</div><div class='indent'>");
+            console.log('</div><div class="indentLine">');
             console.log(originalState);
-            console.log("</div><div class='indent'>");
+            console.log('</div><div class="indentLine">');
 
             console.log(expectedState);
-            console.log("</div><div class='indent'>");
+            console.log('</div><div class="indentLine">');
             console.log(testAction);
-            console.log("</div><div class='indent'>");
+            console.log('</div><div class="indentLine">');
             console.log(actualState);
-            console.log("</div><div class='indent'>");
+            console.log('</div><div class="indentLine">');
 
             console.log(test);
-            console.log("</div><div class='indent'>");
+            console.log('</div><div class="indentLine">');
 
             console.log(endTag);
-            console.log("</div><div class='indent'>");
+            console.log('</div><div class="indentLine">');
 
             console.log(endTag);
             console.log('</div>');

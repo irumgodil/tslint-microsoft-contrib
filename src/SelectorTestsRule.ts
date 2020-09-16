@@ -56,8 +56,8 @@ class RulesWalker extends Lint.RuleWalker {
             this.selectorSourceFileCollection.set(sourceFileName, this.currentSelectorSourceFile);
         }
 
-        //if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
-        if (true) {
+        if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
+            //if (true) {
             this.printSelectors = true;
         } else {
             this.printSelectors = false;

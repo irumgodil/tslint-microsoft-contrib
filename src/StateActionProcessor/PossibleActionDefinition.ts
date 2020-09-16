@@ -51,10 +51,11 @@ export class PossibleActionDefinition {
                 if (isTypeAndPayloadDefinition) {
                     this.typeDeclaration = objectProperties[0] as ts.PropertyAssignment;
                     this.payloadDeclaration = objectProperties[1] as ts.PropertyAssignment;
-                } else {
-                    this.typeDeclaration = undefined;
-                    this.payloadDeclaration = undefined;
+                    return true;
                 }
+
+                this.typeDeclaration = undefined;
+                this.payloadDeclaration = undefined;
             }
         }
 
@@ -69,5 +70,33 @@ export class PossibleActionDefinition {
     // Checks if the property being assigned is 'payload' as that is part of the enclosing definition.
     private isPropertyAssignmentPayload(payloadProperty: ts.PropertyAssignment) {
         return payloadProperty.name.getText() === 'payload';
+    }
+
+    public printActionData(): void {
+        console.log('<td>');
+
+        console.log("<div class='indent'>");
+
+        // IRUMTODO: this can be empty
+        console.log(this.enclosingVariableDeclaration!.name);
+        console.log('</div>');
+
+        console.log("<div class='indent'>");
+
+        // IRUMTODO: this can be empty
+        console.log(this.typeDeclaration!.name);
+        console.log((this.typeDeclaration!.initializer as ts.Identifier).escapedText);
+        console.log('</div>');
+
+        console.log('</div>');
+
+        console.log(this.payloadDeclaration!.name);
+        //console.log((this.payloadDeclaration!.initializer as ts.Identifier).escapedText);
+
+        console.log("<div class='indent'>");
+
+        console.log('</div>');
+
+        console.log('</td>');
     }
 }

@@ -4,6 +4,7 @@ import { CreateStateVariableDeclaration } from './CreateStateVariableDeclaration
 
 import { VariableDeclaration } from './ActionComponents/VariableDeclaration';
 import { ActionDefinition } from './ActionDefinition';
+import { PossibleActionDefinition } from '../StateActionProcessor/PossibleActionDefinition';
 
 export class ActionSourceFile {
     // The source file.
@@ -17,8 +18,6 @@ export class ActionSourceFile {
 
     // The current 'stateVariable' being worked upon in order to process data on the current state variable.
     private currentActionStateVariable: CreateStateVariableDeclaration | undefined;
-
-    private actionDefinitions: ActionDefinition[] = [];
 
     constructor(sourceFile: ts.SourceFile) {
         this.stateSourceFile = sourceFile;
@@ -64,12 +63,15 @@ export class ActionSourceFile {
     // Prints the State-> Action data in this source file.
     public print() {
         if (this.actionStateVariables.length > 0) {
-            console.log('<h1>Action Data in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
+            const fileId = this.stateSourceFile.fileName.replace(/(\/|\.|\:|\-)/g, '_');
+            console.log(
+                '<div><a href="#' + fileId + '" data-toggle="collapse">Reducer Tests for: ' + this.stateSourceFile.fileName + '</a></div>'
+            );
             this.createStateIdentifiers.print();
             this.createActionTypes.print();
 
             if (this.actionStateVariables.length > 0) {
-                console.log('<table>');
+                console.log('<table id="' + fileId + '"  class="collapse">');
 
                 console.log('<tr>');
                 console.log('<td><b>State Variable</b></td>');
@@ -81,15 +83,12 @@ export class ActionSourceFile {
                 this.actionStateVariables.forEach(actionStateVariable => {
                     actionStateVariable.print();
                 });
+
                 console.log('</table>');
             } else {
                 console.log('<h3>No data found</h2>');
             }
         }
-    }
-
-    public addActionDefinitionVariableDeclaration(node: ts.VariableDeclaration) {
-        this.actionDefinitions.push(new ActionDefinition(node));
     }
 
     public getCurrentActionStateVariable(): CreateStateVariableDeclaration | undefined {
