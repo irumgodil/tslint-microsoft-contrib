@@ -92,9 +92,12 @@ export class CreateStateVariableDeclaration {
      */
     public print(): void {
         console.log('<tr>');
-        console.log('<td><b>' + this.varName + '</b></td>');
-        console.log('<td><b>' + this.initializedValue + '</b></td>');
-        console.log('<td>');
+        console.log('<td><div><b>Name:</b></div>');
+        console.log('<div>' + this.varName + '</div><br/>');
+
+        console.log('<div><b>Initial Value:</b></div>');
+        console.log('<div>' + this.initializedValue + '</div><br/>');
+        console.log('<div><b>Actions:</b></div>');
 
         this.actionPropertyExpressions.forEach((_value: ts.PropertyAccessExpression, key: string) => {
             console.log('<div>' + key + '</div>');
@@ -113,7 +116,7 @@ export class CreateStateVariableDeclaration {
         const expectedState = 'const expectedState = {Fillout};';
 
         this.actionPropertyExpressions.forEach((_value: ts.PropertyAccessExpression, key: string) => {
-            const describeString = "describe('reducers for " + this.varName + ' using action: ' + key + "', () => {";
+            const describeString = "describe('reducers for <b>" + this.varName + '</b> using action: ' + key + "', () => {";
             const itString = "it('should set the value for " + this.varName + ' using action: ' + key + "', () => {";
 
             const endTag = '});';
@@ -121,16 +124,16 @@ export class CreateStateVariableDeclaration {
 
             const actionDefinition = ActionDefinitionCollection.actionDefinitions.get(key);
             if (actionDefinition) {
-                testAction = 'const testAction = ' + actionDefinition.getActionDataForTest();
+                testAction = 'const testAction = <b>' + actionDefinition.getActionDataForTest() + '</b>';
             }
 
-            const actualState = 'const actualState =  ' + this.varName + '(originalState, testAction);';
+            const actualState = 'const actualState =  <b>' + this.varName + '</b>(originalState, testAction);';
             const test = 'expect(actualState).toEqual(expectedState);';
 
-            console.log('<div class="indent">');
+            console.log('<div class="describe">');
 
             console.log(describeString);
-            console.log('</div><div class="indent">');
+            console.log('</div><div class="itString">');
 
             console.log(itString);
             console.log('</div><div class="indentLine">');
@@ -145,13 +148,13 @@ export class CreateStateVariableDeclaration {
             console.log('</div><div class="indentLine">');
 
             console.log(test);
-            console.log('</div><div class="indentLine">');
+            console.log('</div><div class="itString">');
 
             console.log(endTag);
-            console.log('</div><div class="indentLine">');
+            console.log('</div><div class="describe">');
 
             console.log(endTag);
-            console.log('</div>');
+            console.log('</div><br/>');
         });
 
         console.log('</td>');

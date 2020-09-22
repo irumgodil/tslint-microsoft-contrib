@@ -8,7 +8,7 @@ import { PossibleActionDefinition } from '../StateActionProcessor/PossibleAction
 
 export class ActionSourceFile {
     // The source file.
-    private stateSourceFile: ts.SourceFile;
+    public stateSourceFile: ts.SourceFile;
 
     // The list of 'createStateField' state variables - that are used for the reducer testing.
     private actionStateVariables: CreateStateVariableDeclaration[] = [];
@@ -62,33 +62,33 @@ export class ActionSourceFile {
 
     // Prints the State-> Action data in this source file.
     public print() {
-        if (this.actionStateVariables.length > 0) {
-            const fileId = this.stateSourceFile.fileName.replace(/(\/|\.|\:|\-)/g, '_');
-            console.log(
-                '<div><a href="#' + fileId + '" data-toggle="collapse">Reducer Tests for: ' + this.stateSourceFile.fileName + '</a></div>'
-            );
-            this.createStateIdentifiers.print();
-            this.createActionTypes.print();
-
             if (this.actionStateVariables.length > 0) {
-                console.log('<table id="' + fileId + '"  class="collapse">');
+                const fileId = this.stateSourceFile.fileName.replace(/(\/|\.|\:|\-)/g, '_');
+                console.log(
+                    '<div><a href="#' + fileId + '" data-toggle="collapse">Reducer Tests for: ' + this.stateSourceFile.fileName + '</a></div>'
+                );
+                this.createStateIdentifiers.print();
+                this.createActionTypes.print();
 
-                console.log('<tr>');
-                console.log('<td><b>State Variable</b></td>');
-                console.log('<td><b>Initial Value</b></td>');
-                console.log('<td><b>Actions</b></td>');
+                if (this.actionStateVariables.length > 0) {
+                    console.log('<table id="' + fileId + '"  class="collapse">');
 
-                console.log('<td><b>Tests</b></td>');
+                    console.log('<tr>');
+                    console.log('<td><b>State Variable Data:</b></td>');
 
-                this.actionStateVariables.forEach(actionStateVariable => {
-                    actionStateVariable.print();
-                });
 
-                console.log('</table>');
-            } else {
-                console.log('<h3>No data found</h2>');
+                    console.log('<td><b>Tests</b></td>');
+
+                    this.actionStateVariables.forEach(actionStateVariable => {
+                        actionStateVariable.print();
+                    });
+
+                    console.log('</table>');
+                } else {
+                    console.log('<h3>No data found</h2>');
+                }
             }
-        }
+
     }
 
     public getCurrentActionStateVariable(): CreateStateVariableDeclaration | undefined {

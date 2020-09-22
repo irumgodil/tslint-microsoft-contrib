@@ -1,0 +1,6 @@
+{
+    "rules": {
+        "irum-compiler": true,
+        "automation-reducer": true
+    }
+}
