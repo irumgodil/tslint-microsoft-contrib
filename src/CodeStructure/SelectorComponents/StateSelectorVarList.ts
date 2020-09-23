@@ -42,7 +42,8 @@ export class StateSelectorVarList {
 
     public printTests(): void {
         this.varList.forEach((node: string, index: number) => {
-            console.log('<div>');
+            console.log('</div><div class="indentLineMore">');
+
 
             if (index !== this.varList.length - 1) {
                 console.log(node + ': {');
@@ -56,7 +57,7 @@ export class StateSelectorVarList {
 
         this.varList.forEach((_node: string, index: number) => {
             if (index !== this.varList.length - 1) {
-                console.log('<div>');
+                console.log('</div><div class="indentLine">');
                 console.log('}');
                 console.log('</div>');
             }

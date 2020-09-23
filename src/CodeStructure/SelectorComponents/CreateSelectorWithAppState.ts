@@ -83,7 +83,7 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         const result = 'const result = ' + this.varName + '(appState)';
         const expectedStmt = 'expect(result).toEqual(' + expectedValueFill + ')';
 
-        console.log('<div>');
+        console.log('<div class="describe">');
 
         console.log(describeString);
         console.log('</div><div>');
@@ -93,14 +93,15 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
 
         this.printAppState();
 
-        console.log('<div>');
+        console.log('<div class="indentLine">');
         console.log(result);
-        console.log('</div><div>');
+        console.log('</div><div class="indentLine">');
         console.log(expectedStmt);
-        console.log('</div><div>');
+        console.log('</div><div class="itString">');
+
 
         console.log(endTag);
-        console.log('</div><div>');
+        console.log('</div><div class="describe">');
         console.log(endTag);
         console.log('</div>');
 
@@ -111,13 +112,15 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         const endTag = '});';
         const appState = 'const appState = fromJS({';
 
-        console.log('<div>');
+        console.log('</div><div class="indentLine">');
+
         console.log(appState);
         console.log('</div>');
 
         this.stateselectorVarList.printTests();
 
-        console.log('<div>');
+        console.log('</div><div class="indentLine">');
+
         console.log(endTag);
         console.log('</div>');
     }

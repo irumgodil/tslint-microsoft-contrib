@@ -75,12 +75,23 @@ export class SelectorsSourceFile {
     }
 
     public print() {
-        if (this.createSelectorWithAppStates.size > 0) {
-            console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
+        const fileId = this.stateSourceFile.fileName.replace(/(\/|\.|\:|\-)/g, '_');
+        const hasSelectors = this.createSelectorWithAppStates.size > 0 || this.stateSelectorElements.size > 0 || this.createSelectorElements.length > 0;
 
-            console.log("<table class='selector'>");
-            console.log('<tr />');
-            console.log('<tr><b>CreateState Selectors With AppState</b></tr>');
+        if (hasSelectors) {
+            console.log('<br/>');
+            console.log('<h4>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h4>');
+        }
+        else {
+            console.log('<div> Selectors in SourceFile: ' + this.stateSourceFile.fileName + ' - None</div>');
+        }
+
+        if (this.createSelectorWithAppStates.size > 0) {
+            console.log(
+                '<div><a href="#createState' + fileId + '" data-toggle="collapse">CreateState Selectors With AppState' + this.stateSourceFile.fileName + '</a></div>'
+            );
+            console.log("<table id='createState" + fileId + "'  class='collapse selector'>");
+
             console.log('<tr>');
             console.log('<td><b>Selector name</b></td>');
 
@@ -96,11 +107,12 @@ export class SelectorsSourceFile {
         }
 
         if (this.stateSelectorElements.size > 0) {
-            console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
+            console.log(
+                '<div><a href="#stateSelector' + fileId + '" data-toggle="collapse">State Selectors ' + this.stateSourceFile.fileName + '</a></div>'
+            );
 
-            console.log("<table class='selector'>");
-            console.log('<tr />');
-            console.log('<tr><b>State Selectors</b></tr>');
+            console.log("<table id='stateSelector" + fileId + "'  class='collapse selector'>");
+
             console.log('<tr>');
             console.log('<td><b>Selector name</b></td>');
 
@@ -115,11 +127,12 @@ export class SelectorsSourceFile {
             console.log('</table>');
         }
         if (this.createSelectorElements.length > 0) {
-            console.log('<h1>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h1>');
+            console.log(
+                '<div><a href="#create' + fileId + '" data-toggle="collapse">CreateSelectors ' + this.stateSourceFile.fileName + '</a></div>'
+            );
+            console.log("<table id='create" + fileId + "'  class='collapse selector'>");
 
-            console.log("<table class='selector'>");
-
-            console.log('<tr><b>CreateSelectors</b></tr>');
+            console.log('<tr><b></b></tr>');
             console.log('<tr>');
             console.log('<td><b>Selector name</b></td>');
             console.log('<td><b>Preceding Selector Name</b></td>');
