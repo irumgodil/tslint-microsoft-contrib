@@ -83,21 +83,22 @@ export class SelectorsSourceFile {
             console.log('<h4>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h4>');
         }
         else {
-            console.log('<div> Selectors in SourceFile: ' + this.stateSourceFile.fileName + ' - None</div>');
+            //console.log('<div> Selectors in SourceFile: ' + this.stateSourceFile.fileName + ' - None</div>');
         }
 
+        // Eg: const isIdentitySupported = createSelector(
+            /* (state: AppState) => state.getIn(['app', 'brsSetting']),
+            (brsSettings: IImmutableMap<BRSSetting>) => brsSettings.get('MicrosoftSearchEnableIdentityMapping')
+            )*/
         if (this.createSelectorWithAppStates.size > 0) {
             console.log(
-                '<div><a href="#createState' + fileId + '" data-toggle="collapse">CreateState Selectors With AppState' + this.stateSourceFile.fileName + '</a></div>'
+                '<div><a href="#createState' + fileId + '" data-toggle="collapse">CreateSelectors With AppState (as arg): ' + this.stateSourceFile.fileName + '</a></div>'
             );
             console.log("<table id='createState" + fileId + "'  class='collapse selector'>");
-
             console.log('<tr>');
             console.log('<td><b>Selector name</b></td>');
-
             console.log('<td><b>App State Vars</b></td>');
-            console.log('<td><b>Parameters</b></td>');
-
+            console.log('<td><b>Tests</b></td>');
             console.log('</tr>');
             this.createSelectorWithAppStates.forEach(stateSelectorElement => {
                 stateSelectorElement.print();
@@ -106,29 +107,29 @@ export class SelectorsSourceFile {
             console.log('</table>');
         }
 
+        // eg.
+        /*export const udtStatesSelector = (state: AppState) => {
+            return state.getIn(['microsoftSearch', 'udtStates'])
+        }*/
         if (this.stateSelectorElements.size > 0) {
             console.log(
-                '<div><a href="#stateSelector' + fileId + '" data-toggle="collapse">State Selectors ' + this.stateSourceFile.fileName + '</a></div>'
+                '<div><a href="#stateSelector' + fileId + '" data-toggle="collapse">State Selectors: ' + this.stateSourceFile.fileName + '</a></div>'
             );
 
             console.log("<table id='stateSelector" + fileId + "'  class='collapse selector'>");
-
             console.log('<tr>');
             console.log('<td><b>Selector name</b></td>');
-
             console.log('<td><b>App State Var</b></td>');
-            console.log('<td><b>Parameters</b></td>');
-
+            console.log('<td><b>Tests</b></td>');
             console.log('</tr>');
             this.stateSelectorElements.forEach(stateSelectorElement => {
                 stateSelectorElement.print();
             });
-
             console.log('</table>');
         }
         if (this.createSelectorElements.length > 0) {
             console.log(
-                '<div><a href="#create' + fileId + '" data-toggle="collapse">CreateSelectors ' + this.stateSourceFile.fileName + '</a></div>'
+                '<div><a href="#create' + fileId + '" data-toggle="collapse">CreateSelectors  with Precedent: ' + this.stateSourceFile.fileName + '</a></div>'
             );
             console.log("<table id='create" + fileId + "'  class='collapse selector'>");
 
@@ -137,13 +138,33 @@ export class SelectorsSourceFile {
             console.log('<td><b>Selector name</b></td>');
             console.log('<td><b>Preceding Selector Name</b></td>');
             console.log('<td><b>Variable from Preceding selector</b></td>');
-
+            console.log('<td><b>Tests</b></td>');
             console.log('</tr>');
 
             this.createSelectorElements.forEach(createSelectorElement => {
                 createSelectorElement.print();
             });
             console.log('<tr />');
+            console.log('</table>');
+        }
+
+        if (hasSelectors) {
+            console.log(
+                '<div><a href="#allTests' + fileId + '" data-toggle="collapse">CopyAllTestsInThisFile: ' + this.stateSourceFile.fileName + '</a></div>'
+            );
+            console.log("<table id='allTests" + fileId + "'  class='collapse alltests'>");
+            console.log('<tr>');
+            console.log('<td><b>All Tests</b>');
+            this.createSelectorWithAppStates.forEach(stateSelectorElement => {
+                stateSelectorElement.printTests();
+            });
+            this.stateSelectorElements.forEach(stateSelectorElement => {
+                stateSelectorElement.printTests();
+            });
+            this.createSelectorElements.forEach(createSelectorElement => {
+                createSelectorElement.printTests()
+            });
+            console.log('</td></tr>');
             console.log('</table>');
         }
     }

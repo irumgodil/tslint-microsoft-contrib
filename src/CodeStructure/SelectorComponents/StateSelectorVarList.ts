@@ -1,5 +1,10 @@
 import * as ts from 'typescript';
 
+/*
+export const udtStatesSelector = (state: AppState) => {
+  return state.getIn(['microsoftSearch', 'udtStates'])
+}
+*/
 export class StateSelectorVarList {
     // the list of values being modified as a result of this state variable. e.g. in case of:
     // return state.getIn(['microsoftSearch', 'connectorList', 'isAddConnectorWizardOpened']), it is the 3 strings
@@ -36,31 +41,48 @@ export class StateSelectorVarList {
      */
     public print(): void {
         this.varList.forEach((node: string) => {
-            console.log(node + ': {');
+            console.log('<div class="describe">' + node + ': { </div>' );
         });
     }
 
-    public printTests(): void {
+    public printTests(finalValueBeingSet?: string): void {
+        let padding = 30;
         this.varList.forEach((node: string, index: number) => {
-            console.log('</div><div class="indentLineMore">');
-
-
+            let paddingStyle = 'style="font-style: italic; font-size:12; padding-left:' + padding + '"';
+            console.log('</div><div ' + paddingStyle + '>');
             if (index !== this.varList.length - 1) {
                 console.log(node + ': {');
+                padding += 10;
             } else {
-                console.log(node + ': ');
-                console.log('FilloutExpectedValue');
-            }
+                console.log(node + ': {');
 
+                if (finalValueBeingSet) {
+                    console.log('</div><div ' + paddingStyle + '>');
+                    padding += 10;
+                    console.log(finalValueBeingSet + ':');
+                }
+                paddingStyle = 'style="font-style: italic; font-size:12; padding-left:' + padding + '"';
+                console.log('</div><div ' + paddingStyle + '>');
+                console.log('expectedResult');
+
+                if (finalValueBeingSet) {
+                    paddingStyle = 'style="font-style: italic; font-size:12; padding-left:' + padding + '"';
+                    padding -= 10;
+                    console.log('</div><div ' + paddingStyle + '>');
+                    padding -= 10;
+                }
+            }
             console.log('</div>');
         });
 
         this.varList.forEach((_node: string, index: number) => {
+            const paddingStyle = 'style="font-size:12; padding-left:' + padding + '"';
             if (index !== this.varList.length - 1) {
-                console.log('</div><div class="indentLine">');
+                console.log('</div><div ' + paddingStyle + '>');
                 console.log('}');
                 console.log('</div>');
             }
+            padding -= 10;
         });
     }
 }

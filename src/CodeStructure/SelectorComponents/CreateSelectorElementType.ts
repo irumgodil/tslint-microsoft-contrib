@@ -10,6 +10,7 @@ export class CreateSelectorElementType extends ASelectorElement {
     // This is the full variable declaration, see definition of 'selectedStepId' above
     protected overallDeclaration: ts.Node;
 
+    // This is the full call createSelector(args, args)
     protected createSelectorCallExpression: ts.CallExpression;
 
     constructor(createSelectorVar: ts.Node, createSelectorCallExpression: ts.CallExpression) {

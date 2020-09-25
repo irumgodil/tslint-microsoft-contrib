@@ -86,28 +86,56 @@ export class StateSelectorElement extends ASelectorElement {
     public print(): void {
         console.log('<tr>');
         console.log('<td><b>' + this.varName + '</b></td>');
+
+        console.log('<td><div>' + this.isAppStateBased + '</div>');
+        console.log('<div> appStateVarName: ' + this.appStateVariableName + '</div></td>');
+
         console.log('<td>');
-
-        console.log('<td><b>' + this.isAppStateBased + ' appStateVarName: ' + this.appStateVariableName + '</b></td>');
-
-        console.log('<td>');
-        this.varList.print();
-        console.log('</td>');
-
         this.printTests();
+
+        console.log('</td>');
 
         console.log('</td></tr>');
     }
 
     public printTests(): void {
-        // There should be no tests here.
+
+        const describeString = "describe('Selectors for " + this.varName + "', () => {";
+        const itString = "it('Test retrieving values for " + this.varName + "', () => {";
+        const endTag = '})';
+
+        const expectedValue = 'const expectedValue = <FilloutExpectedValue>;';
+
+        const expectedValueFill = 'expectedValue';
+        const result = 'const result = ' + this.varName + '(appState)';
+        const expectedStmt = 'expect(result).toEqual(' + expectedValueFill + ')';
+
+        console.log('<div class="describe">');
+        console.log(describeString);
+        console.log('</div><div class="itString">');
+        console.log(itString);
+        console.log('</div>');
+
+        this.printAppState();
+
+        console.log('<div class="indentLine">');
+        console.log(result);
+        console.log('</div><div class="indentLine">');
+        console.log(expectedStmt);
+        console.log('</div><div class="itString">');
+
+
+        console.log(endTag);
+        console.log('</div><div class="describe">');
+        console.log(endTag);
+        console.log('</div>');
     }
 
     public printAppState(): void {
         const endTag = '});';
         const appState = 'const appState = fromJS({';
 
-        console.log('<div>');
+        console.log('<div class="indentLine">');
         console.log(appState);
         console.log('</div>');
 

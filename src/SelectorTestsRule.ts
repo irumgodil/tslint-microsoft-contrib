@@ -57,6 +57,7 @@ class RulesWalker extends Lint.RuleWalker {
         }
 
         if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
+        //if (sourceFileName.indexOf('C:/m365/modules/host-mac/') !== -1) {
             //if (true) {
             this.printSelectors = true;
         } else {
@@ -102,6 +103,10 @@ class RulesWalker extends Lint.RuleWalker {
                 if (node.arguments.length > 0) {
                     const firstArg = node.arguments[0];
 
+                    /*eg: const isIdentitySupported = createSelector(
+                            (state: AppState) => state.getIn(['app', 'brsSetting']),
+                            (brsSettings: IImmutableMap<BRSSetting>) => brsSettings.get('MicrosoftSearchEnableIdentityMapping')
+                            )*/
                     if (firstArg.kind === ts.SyntaxKind.ArrowFunction) {
                         this.currentProcess.processingCreateSelectorOn = true;
                         this.currentProcess.createSelectorExpression = node;
@@ -117,6 +122,7 @@ class RulesWalker extends Lint.RuleWalker {
                     }
                 }
             }
+            // ASsuming we have hit 'createSelector' already
             if (this.currentProcess.processingCreateSelectorOn) {
                 //TO-do this is still not baked as we are assuming the first call for getIn is the one.
                 // TO-Do -

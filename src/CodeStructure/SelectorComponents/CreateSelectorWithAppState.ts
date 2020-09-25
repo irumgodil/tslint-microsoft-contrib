@@ -20,7 +20,7 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
     public stateselectorVarList: StateSelectorVarList = new StateSelectorVarList();
 
     // This is the string value being set, so in wizard!.get('wizardComplete'), it is 'wizardComplete'
-    private readonly valueString: string = '';
+    private valueString: string = '';
 
     constructor(
         createSelectorVar: ts.VariableDeclaration,
@@ -32,6 +32,7 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         // Set the name of the state variable.
         this.setName();
         this.stateselectorVarList.addVarList(varArgs);
+        this.tryDeduceValueString();
     }
 
     public addVarToStateList(arg: string): void {
@@ -40,6 +41,26 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
 
     public getCreateSelectorExpression(): ts.CallExpression {
         return this.createSelectorCallExpression;
+    }
+
+
+    /*const isIdentitySupported = createSelector(
+  (state: AppState) => state.getIn(['app', 'brsSetting']),
+  (brsSettings: IImmutableMap<BRSSetting>) => brsSettings.get('MicrosoftSearchEnableIdentityMapping')
+)*/
+    private tryDeduceValueString(): void {
+        if (this.createSelectorCallExpression.arguments.length === 2) {
+            const secondArg = this.createSelectorCallExpression.arguments[1];
+            if (secondArg.kind === ts.SyntaxKind.ArrowFunction) {
+                const arrowFunction = (secondArg as ts.ArrowFunction)
+                if ((arrowFunction.body.kind === ts.SyntaxKind.CallExpression)) {
+                    const callExp = arrowFunction.body as ts.CallExpression;
+                    if (callExp.expression.getText().endsWith('.get')) {
+                        this.valueString = callExp.arguments[0].getFullText();
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -59,34 +80,30 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
      */
     public print(): void {
         console.log('<tr>');
-        console.log('<td><b>' + this.varName + '</b></td>');
+        console.log('<td class="describe"><b>' + this.varName + '</b></td>');
         console.log('<td>');
         this.stateselectorVarList.print();
         console.log('</td>');
+        console.log('<td>');
 
         this.printTests();
 
+        console.log('</td>');
         console.log('</tr>');
     }
 
     public printTests(): void {
-        console.log('<td>');
-
         const describeString = "describe('Selectors for " + this.varName + "', () => {";
         const itString = "it('Test retrieving values for " + this.varName + "', () => {";
-
         const endTag = '})';
 
-        // const expectedValue = 'const expectedValue = FilloutExpectedValue;';
-
-        const expectedValueFill = 'FilloutExpectedValue';
         const result = 'const result = ' + this.varName + '(appState)';
-        const expectedStmt = 'expect(result).toEqual(' + expectedValueFill + ')';
+        const expectedStmt = 'expect(result).toEqual(expectedResult)';
 
         console.log('<div class="describe">');
 
         console.log(describeString);
-        console.log('</div><div>');
+        console.log('</div><div class="itString">');
 
         console.log(itString);
         console.log('</div>');
@@ -105,19 +122,21 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         console.log(endTag);
         console.log('</div>');
 
-        console.log('</td>');
     }
 
     public printAppState(): void {
         const endTag = '});';
         const appState = 'const appState = fromJS({';
+        const expectedStmt = 'const expectedResult = createImmutableMap({} as);';
 
         console.log('</div><div class="indentLine">');
-
+        console.log(expectedStmt);
+        console.log('</div>');
+        console.log('</div><div class="indentLine">');
         console.log(appState);
         console.log('</div>');
 
-        this.stateselectorVarList.printTests();
+        this.stateselectorVarList.printTests(this.valueString);
 
         console.log('</div><div class="indentLine">');
 
