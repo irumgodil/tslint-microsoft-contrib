@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 
-import { CreateSelectorSingleElement } from './SelectorComponents/CreateSelectorSingleElement';
+import { CreateSelectorSinglePrecedent } from './SelectorComponents/CreateSelectorSinglePrecedent';
 import { CreateSelectorWithAppState } from './SelectorComponents/CreateSelectorWithAppState';
 
 import { StateSelectorElement } from './SelectorComponents/StateSelectorElement';
@@ -10,12 +10,13 @@ export class SelectorsSourceFile {
     private readonly stateSourceFile: ts.SourceFile;
 
     private readonly createSelectorWithAppStates: Map<string, CreateSelectorWithAppState> = new Map<string, CreateSelectorWithAppState>();
-
-    private readonly createSelectorElements: CreateSelectorSingleElement[] = [];
-
+    private readonly createSelectorWithPrecedents: Map<string, CreateSelectorSinglePrecedent> = new Map<
+        string,
+        CreateSelectorSinglePrecedent
+    >();
     private readonly stateSelectorElements: Map<string, StateSelectorElement> = new Map<string, StateSelectorElement>();
 
-    private currentCreateSelectorElement: CreateSelectorSingleElement | undefined;
+    private currentCreateSelectorElement: CreateSelectorSinglePrecedent | undefined;
 
     constructor(sourceFile: ts.SourceFile) {
         this.stateSourceFile = sourceFile;
@@ -26,9 +27,8 @@ export class SelectorsSourceFile {
     }
 
     public addCreateSelectorsNode(node: ts.VariableDeclaration, createSelector: ts.CallExpression, getCall: ts.CallExpression) {
-        this.currentCreateSelectorElement = new CreateSelectorSingleElement(node, createSelector, getCall);
-        this.createSelectorElements.push(this.currentCreateSelectorElement);
-
+        this.currentCreateSelectorElement = new CreateSelectorSinglePrecedent(node, createSelector, getCall);
+        this.createSelectorWithPrecedents.set(this.currentCreateSelectorElement.getName(), this.currentCreateSelectorElement);
         this.locatePrecedentSelector();
     }
 
@@ -65,6 +65,11 @@ export class SelectorsSourceFile {
                                 const createAppStateSelector = this.createSelectorWithAppStates.get(firstArgName);
                                 if (createAppStateSelector) {
                                     this.currentCreateSelectorElement.setPrecedingSelector(createAppStateSelector);
+                                } else {
+                                    const precedingSelector = this.createSelectorWithPrecedents.get(firstArgName);
+                                    if (precedingSelector) {
+                                        this.currentCreateSelectorElement.setPrecedingSelector(precedingSelector);
+                                    }
                                 }
                             }
                         }
@@ -76,23 +81,27 @@ export class SelectorsSourceFile {
 
     public print() {
         const fileId = this.stateSourceFile.fileName.replace(/(\/|\.|\:|\-)/g, '_');
-        const hasSelectors = this.createSelectorWithAppStates.size > 0 || this.stateSelectorElements.size > 0 || this.createSelectorElements.length > 0;
+        const hasSelectors =
+            this.createSelectorWithAppStates.size > 0 || this.stateSelectorElements.size > 0 || this.createSelectorWithPrecedents.size > 0;
 
         if (hasSelectors) {
             console.log('<br/>');
             console.log('<h4>Selectors in SourceFile: ' + this.stateSourceFile.fileName + '</h4>');
-        }
-        else {
+        } else {
             //console.log('<div> Selectors in SourceFile: ' + this.stateSourceFile.fileName + ' - None</div>');
         }
 
         // Eg: const isIdentitySupported = createSelector(
-            /* (state: AppState) => state.getIn(['app', 'brsSetting']),
+        /* (state: AppState) => state.getIn(['app', 'brsSetting']),
             (brsSettings: IImmutableMap<BRSSetting>) => brsSettings.get('MicrosoftSearchEnableIdentityMapping')
             )*/
         if (this.createSelectorWithAppStates.size > 0) {
             console.log(
-                '<div><a href="#createState' + fileId + '" data-toggle="collapse">CreateSelectors With AppState (as arg): ' + this.stateSourceFile.fileName + '</a></div>'
+                '<div><a href="#createState' +
+                    fileId +
+                    '" data-toggle="collapse">CreateSelectors With AppState (as arg): ' +
+                    this.stateSourceFile.fileName +
+                    '</a></div>'
             );
             console.log("<table id='createState" + fileId + "'  class='collapse selector'>");
             console.log('<tr>');
@@ -113,7 +122,11 @@ export class SelectorsSourceFile {
         }*/
         if (this.stateSelectorElements.size > 0) {
             console.log(
-                '<div><a href="#stateSelector' + fileId + '" data-toggle="collapse">State Selectors: ' + this.stateSourceFile.fileName + '</a></div>'
+                '<div><a href="#stateSelector' +
+                    fileId +
+                    '" data-toggle="collapse">State Selectors: ' +
+                    this.stateSourceFile.fileName +
+                    '</a></div>'
             );
 
             console.log("<table id='stateSelector" + fileId + "'  class='collapse selector'>");
@@ -127,9 +140,13 @@ export class SelectorsSourceFile {
             });
             console.log('</table>');
         }
-        if (this.createSelectorElements.length > 0) {
+        if (this.createSelectorWithPrecedents.size > 0) {
             console.log(
-                '<div><a href="#create' + fileId + '" data-toggle="collapse">CreateSelectors  with Precedent: ' + this.stateSourceFile.fileName + '</a></div>'
+                '<div><a href="#create' +
+                    fileId +
+                    '" data-toggle="collapse">CreateSelectors  with Precedent: ' +
+                    this.stateSourceFile.fileName +
+                    '</a></div>'
             );
             console.log("<table id='create" + fileId + "'  class='collapse selector'>");
 
@@ -141,30 +158,10 @@ export class SelectorsSourceFile {
             console.log('<td><b>Tests</b></td>');
             console.log('</tr>');
 
-            this.createSelectorElements.forEach(createSelectorElement => {
+            this.createSelectorWithPrecedents.forEach(createSelectorElement => {
                 createSelectorElement.print();
             });
             console.log('<tr />');
-            console.log('</table>');
-        }
-
-        if (hasSelectors) {
-            console.log(
-                '<div><a href="#allTests' + fileId + '" data-toggle="collapse">CopyAllTestsInThisFile: ' + this.stateSourceFile.fileName + '</a></div>'
-            );
-            console.log("<table id='allTests" + fileId + "'  class='collapse alltests'>");
-            console.log('<tr>');
-            console.log('<td><b>All Tests</b>');
-            this.createSelectorWithAppStates.forEach(stateSelectorElement => {
-                stateSelectorElement.printTests();
-            });
-            this.stateSelectorElements.forEach(stateSelectorElement => {
-                stateSelectorElement.printTests();
-            });
-            this.createSelectorElements.forEach(createSelectorElement => {
-                createSelectorElement.printTests()
-            });
-            console.log('</td></tr>');
             console.log('</table>');
         }
     }

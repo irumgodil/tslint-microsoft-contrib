@@ -33,5 +33,15 @@ export class CreateSelectorElementType extends ASelectorElement {
      */
     public printTests(): void {}
 
-    public printAppState(): void {}
+    public printAppState(varList: string[], isPrecedingSelector?: boolean): void {}
+
+    // To-do: make this a separate sub-class.
+    public addVarToStateList(arg: string): void {
+        //console.log("nothing to add in CreateSelectorElementType");
+    }
+
+    // To-do: make this a separate sub-class.
+    public removeVarFromStateList(arg: string): void {
+        //console.log("nothing to remove in CreateSelectorElementType");
+    }
 }

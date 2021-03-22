@@ -1,5 +1,6 @@
 import * as ts from 'typescript';
 import { VariableDeclarationKind } from 'tsutils';
+import { AstUtils } from '../../utils/AstUtils';
 
 // Collection Object for State/Action Components.
 // E.g. for expression:
@@ -12,14 +13,19 @@ export abstract class ASelectorElement {
     public abstract printTests(): void;
 
     // To-do: make this a separate sub-class.
-    public abstract printAppState(): void;
+    public abstract printAppState(varList: string[], isPrecedingSelector?: boolean): void;
 
     // To-do: make this a separate sub-class.
-    public addVarToStateList(arg: string): void {}
+    public abstract addVarToStateList(arg: string): void;
+
+    // To-do: make this a separate sub-class.
+    public abstract removeVarFromStateList(arg: string): void;
 
     protected varName: string = '';
 
-    public getName(): string {
+    protected isPrivateSelector: boolean = false;
+
+    getName(): string {
         return this.varName;
     }
 }

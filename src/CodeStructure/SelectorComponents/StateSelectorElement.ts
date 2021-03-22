@@ -2,6 +2,7 @@ import * as ts from 'typescript';
 import { ASelectorElement } from './ASelectorElement';
 
 import { StateSelectorVarList } from './StateSelectorVarList';
+import { AstUtils } from '../../utils/AstUtils';
 
 export class StateSelectorElement extends ASelectorElement {
     // This is the full variable declaration, see definition of 'selectedStepId' above
@@ -27,11 +28,16 @@ export class StateSelectorElement extends ASelectorElement {
 
         // Set the name of the state variable.
         this.setName();
+        this.isPrivateSelector = AstUtils.isExported(createStateVar);
         this.process();
     }
 
     public addVarToStateList(arg: string): void {
         this.varList.addVar(arg);
+    }
+
+    public removeVarFromStateList(arg: string): void {
+        this.varList.removeFromVarList(arg);
     }
 
     /**
@@ -84,7 +90,11 @@ export class StateSelectorElement extends ASelectorElement {
      * This is the table that is printed in the main html for test cases.
      */
     public print(): void {
-        console.log('<tr>');
+        let className = '"publicSelector"';
+        if (this.isPrivateSelector) {
+            className = '"privateSelector"';
+        }
+        console.log('<tr class =' + className + '>');
         console.log('<td><b>' + this.varName + '</b></td>');
 
         console.log('<td><div>' + this.isAppStateBased + '</div>');
@@ -99,7 +109,6 @@ export class StateSelectorElement extends ASelectorElement {
     }
 
     public printTests(): void {
-
         const describeString = "describe('Selectors for " + this.varName + "', () => {";
         const itString = "it('Test retrieving values for " + this.varName + "', () => {";
         const endTag = '})';
@@ -116,7 +125,11 @@ export class StateSelectorElement extends ASelectorElement {
         console.log(itString);
         console.log('</div>');
 
-        this.printAppState();
+        console.log('</div><div class="indentLine">');
+        console.log(expectedValue);
+        console.log('</div>');
+
+        this.printAppState([]);
 
         console.log('<div class="indentLine">');
         console.log(result);
@@ -124,14 +137,13 @@ export class StateSelectorElement extends ASelectorElement {
         console.log(expectedStmt);
         console.log('</div><div class="itString">');
 
-
         console.log(endTag);
         console.log('</div><div class="describe">');
         console.log(endTag);
         console.log('</div>');
     }
 
-    public printAppState(): void {
+    public printAppState(precedingVarList: string[]): void {
         const endTag = '});';
         const appState = 'const appState = fromJS({';
 
@@ -139,7 +151,7 @@ export class StateSelectorElement extends ASelectorElement {
         console.log(appState);
         console.log('</div>');
 
-        this.varList.printTests();
+        this.varList.printTests(precedingVarList);
 
         console.log('<div>');
         console.log(endTag);

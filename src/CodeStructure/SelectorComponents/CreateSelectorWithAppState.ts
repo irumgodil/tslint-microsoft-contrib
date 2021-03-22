@@ -1,6 +1,7 @@
 import * as ts from 'typescript';
 import { StateSelectorVarList } from './StateSelectorVarList';
 import { CreateSelectorElementType } from './CreateSelectorElementType';
+import { AstUtils } from '../../utils/AstUtils';
 
 // Example Statement:
 /*
@@ -28,9 +29,11 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         varArgs: ts.NodeArray<ts.Expression>
     ) {
         super(createSelectorVar, createSelectorCallExpression);
+        this.isPrivateSelector = AstUtils.isExported(createSelectorVar);
 
         // Set the name of the state variable.
         this.setName();
+
         this.stateselectorVarList.addVarList(varArgs);
         this.tryDeduceValueString();
     }
@@ -39,10 +42,13 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         this.stateselectorVarList.addVar(arg);
     }
 
+    public removeVarFromStateList(arg: string): void {
+        this.stateselectorVarList.removeFromVarList(arg);
+    }
+
     public getCreateSelectorExpression(): ts.CallExpression {
         return this.createSelectorCallExpression;
     }
-
 
     /*const isIdentitySupported = createSelector(
   (state: AppState) => state.getIn(['app', 'brsSetting']),
@@ -52,8 +58,8 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         if (this.createSelectorCallExpression.arguments.length === 2) {
             const secondArg = this.createSelectorCallExpression.arguments[1];
             if (secondArg.kind === ts.SyntaxKind.ArrowFunction) {
-                const arrowFunction = (secondArg as ts.ArrowFunction)
-                if ((arrowFunction.body.kind === ts.SyntaxKind.CallExpression)) {
+                const arrowFunction = secondArg as ts.ArrowFunction;
+                if (arrowFunction.body.kind === ts.SyntaxKind.CallExpression) {
                     const callExp = arrowFunction.body as ts.CallExpression;
                     if (callExp.expression.getText().endsWith('.get')) {
                         this.valueString = callExp.arguments[0].getFullText();
@@ -79,7 +85,11 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
      * This is the table that is printed in the main html for test cases.
      */
     public print(): void {
-        console.log('<tr>');
+        let className = '"publicSelector"';
+        if (this.isPrivateSelector) {
+            className = '"privateSelector"';
+        }
+        console.log('<tr class =' + className + '>');
         console.log('<td class="describe"><b>' + this.varName + '</b></td>');
         console.log('<td>');
         this.stateselectorVarList.print();
@@ -99,6 +109,7 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
 
         const result = 'const result = ' + this.varName + '(appState)';
         const expectedStmt = 'expect(result).toEqual(expectedResult)';
+        const expectedStmtDecl = 'const expectedResult = createImmutableMap({} as);';
 
         console.log('<div class="describe">');
 
@@ -107,8 +118,11 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
 
         console.log(itString);
         console.log('</div>');
+        console.log('<div class="indentLine">');
+        console.log(expectedStmtDecl);
+        console.log('</div>');
 
-        this.printAppState();
+        this.printAppState([]);
 
         console.log('<div class="indentLine">');
         console.log(result);
@@ -116,27 +130,21 @@ export class CreateSelectorWithAppState extends CreateSelectorElementType {
         console.log(expectedStmt);
         console.log('</div><div class="itString">');
 
-
         console.log(endTag);
         console.log('</div><div class="describe">');
         console.log(endTag);
         console.log('</div>');
-
     }
 
-    public printAppState(): void {
+    public printAppState(precedingVarList: string[], isPrecedingSelector?: boolean): void {
         const endTag = '});';
         const appState = 'const appState = fromJS({';
-        const expectedStmt = 'const expectedResult = createImmutableMap({} as);';
-
-        console.log('</div><div class="indentLine">');
-        console.log(expectedStmt);
-        console.log('</div>');
         console.log('</div><div class="indentLine">');
         console.log(appState);
         console.log('</div>');
 
-        this.stateselectorVarList.printTests(this.valueString);
+        // If this is a precedeing selector, then its own value is not the last one to be printed. The last child is technically the last argument.
+        this.stateselectorVarList.printTests(precedingVarList, this.valueString, isPrecedingSelector);
 
         console.log('</div><div class="indentLine">');
 

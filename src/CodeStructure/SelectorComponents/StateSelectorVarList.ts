@@ -36,16 +36,41 @@ export class StateSelectorVarList {
         this.varList.push(arg);
     }
 
+    public removeFromVarList(arg: string): void {
+        const indexOfItem = this.varList.indexOf(arg);
+        if (indexOfItem !== -1) {
+            this.varList.splice(indexOfItem);
+        }
+    }
+
+    public addListVars(vars: string[]): void {
+        vars.forEach((arg: string) => {
+            this.varList.push(arg);
+        });
+    }
+
+    public removeListVars(vars: string[]): void {
+        vars.forEach((arg: string) => {
+            const indexOfItem = this.varList.indexOf(arg);
+            if (indexOfItem !== -1) {
+                this.varList.splice(indexOfItem);
+            }
+        });
+    }
+
     /**
      * This is the table that is printed in the main html for test cases.
      */
     public print(): void {
         this.varList.forEach((node: string) => {
-            console.log('<div class="describe">' + node + ': { </div>' );
+            console.log('<div class="describe">' + node + ': { </div>');
         });
     }
 
-    public printTests(finalValueBeingSet?: string): void {
+    public printTests(precedingVarList: string[], finalValueBeingSet?: string, isPrecedingSelector?: boolean): void {
+        if (precedingVarList && precedingVarList.length > 0) {
+            this.addListVars(precedingVarList);
+        }
         let padding = 30;
         this.varList.forEach((node: string, index: number) => {
             let paddingStyle = 'style="font-style: italic; font-size:12; padding-left:' + padding + '"';
@@ -54,13 +79,25 @@ export class StateSelectorVarList {
                 console.log(node + ': {');
                 padding += 10;
             } else {
-                console.log(node + ': {');
+                // If this was preceding elment, the last node is the final element, and value is the actual preceding
+                // selector's value.
+                if (!isPrecedingSelector) {
+                    console.log(node + ': {');
+                }
 
                 if (finalValueBeingSet) {
                     console.log('</div><div ' + paddingStyle + '>');
                     padding += 10;
                     console.log(finalValueBeingSet + ':');
+                    if (isPrecedingSelector) {
+                        console.log('{');
+                    }
                 }
+
+                if (isPrecedingSelector) {
+                    console.log(node + ': ');
+                }
+
                 paddingStyle = 'style="font-style: italic; font-size:12; padding-left:' + padding + '"';
                 console.log('</div><div ' + paddingStyle + '>');
                 console.log('expectedResult');
@@ -69,6 +106,7 @@ export class StateSelectorVarList {
                     paddingStyle = 'style="font-style: italic; font-size:12; padding-left:' + padding + '"';
                     padding -= 10;
                     console.log('</div><div ' + paddingStyle + '>');
+                    console.log('}');
                     padding -= 10;
                 }
             }
@@ -77,6 +115,7 @@ export class StateSelectorVarList {
 
         this.varList.forEach((_node: string, index: number) => {
             const paddingStyle = 'style="font-size:12; padding-left:' + padding + '"';
+            // Do not need the last value.
             if (index !== this.varList.length - 1) {
                 console.log('</div><div ' + paddingStyle + '>');
                 console.log('}');
@@ -84,5 +123,10 @@ export class StateSelectorVarList {
             }
             padding -= 10;
         });
+
+        // Cleanup
+        if (precedingVarList && precedingVarList.length > 0) {
+            this.removeListVars(precedingVarList);
+        }
     }
 }
