@@ -56,18 +56,12 @@ class RulesWalker extends Lint.RuleWalker {
             this.selectorSourceFileCollection.set(sourceFileName, this.currentSelectorSourceFile);
         }
 
-        if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
-        //if (sourceFileName.indexOf('C:/m365/modules/host-mac/') !== -1) {
-            //if (true) {
-            this.printSelectors = true;
-        } else {
-            this.printSelectors = false;
-        }
+        //if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors/addConnector-wizard/addConnectorWizard.redux.ts') !== -1) {
+        // if (true) {
+        if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors/') !== -1) {
+            // As part of this visitor, will hit various property declarations
+            super.visitSourceFile(node);
 
-        // As part of this visitor, will hit various property declarations
-        super.visitSourceFile(node);
-
-        if (this.printSelectors) {
             // Prints all the action objects.
             this.printSelectorElements();
         }

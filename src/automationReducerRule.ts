@@ -65,7 +65,7 @@ export class CompilerRulesWalker extends Lint.RuleWalker {
         const sourceFileName = node.fileName;
 
         //if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/') !== -1) {
-            if (sourceFileName.indexOf('C:/m365/modules/host-mac/') !== -1) {
+        if (sourceFileName.indexOf('C:/m365/modules/host-mac/microsoft-search/connectors') !== -1) {
             this.currentActionSourceFile = this.actionSourceFileCollection.get(sourceFileName);
 
             // If this source file is being parsed the first time, keep a copy of it.
@@ -73,8 +73,6 @@ export class CompilerRulesWalker extends Lint.RuleWalker {
                 this.currentActionSourceFile = new ActionSourceFile(node);
                 this.actionSourceFileCollection.set(sourceFileName, this.currentActionSourceFile);
             }
-
-
 
             // As part of this visitor, will hit various property declarations
             super.visitSourceFile(node);
@@ -228,7 +226,7 @@ export class CompilerRulesWalker extends Lint.RuleWalker {
 
     public printActionObjects(): void {
         this.actionSourceFileCollection.forEach((value: ActionSourceFile, _key: string) => {
-                value.print();
+            value.print();
         });
     }
 
